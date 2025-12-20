@@ -1,0 +1,41 @@
+# Python Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Sensitive data
+.env
+config_local.py
+
+# Temporary files
+*.log
+*.csv
+output/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/

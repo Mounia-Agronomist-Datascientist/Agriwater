@@ -1,0 +1,144 @@
+{
+  "metadata": {
+    "description": "Crop agronomic parameters according to FAO-56 methodology",
+    "source": "FAO Irrigation and Drainage Paper No. 56",
+    "author": "Mounia Tonazzini",
+    "date": "december 2025",
+    "units": {
+      "kc": "unitless (coefficient)",
+      "stage_duration": "days"
+    }
+  },
+  "crops": {
+    "wheat": {
+      "full_name": "WHEAT",
+      "scientific_name": "Triticum aestivum",
+      "type": "cereal",
+      "description": "Straw cereal cultivated for grain production",
+      "phenological_stages": {
+        "initial": {
+          "description": "Sowing to 10% ground cover",
+          "kc": 0.30,
+          "duration_days": 15
+        },
+        "development": {
+          "description": "Active vegetative growth (tillering, stem extension)",
+          "kc": 0.75,
+          "duration_days": 30
+        },
+        "mid_season": {
+          "description": "Flowering to grain milk stage",
+          "kc": 1.15,
+          "duration_days": 50
+        },
+        "late_season": {
+          "description": "Ripening and senescence",
+          "kc": 0.40,
+          "duration_days": 30
+        }
+      },
+      "total_cycle_days": 125,
+      "irrigation_interval": [5, 7],
+      "water_stress_sensitivity": "medium"
+    },
+    "maize": {
+      "full_name": "MAIZE",
+      "scientific_name": "Zea mays",
+      "type": "cereal",
+      "description": "Summer cereal with high water requirements",
+      "phenological_stages": {
+        "initial": {
+          "description": "Sowing to 10% ground cover",
+          "kc": 0.30,
+          "duration_days": 20
+        },
+        "development": {
+          "description": "Rapid vegetative growth",
+          "kc": 0.80,
+          "duration_days": 35
+        },
+        "mid_season": {
+          "description": "Flowering to grain milk stage",
+          "kc": 1.20,
+          "duration_days": 40
+        },
+        "late_season": {
+          "description": "Ripening and senescence",
+          "kc": 0.60,
+          "duration_days": 30
+        }
+      },
+      "total_cycle_days": 125,
+      "irrigation_interval": [5, 7],
+      "water_stress_sensitivity": "high"
+    },
+    "tomato": {
+      "full_name": "TOMATO",
+      "scientific_name": "Solanum lycopersicum",
+      "type": "vegetable-fruit",
+      "description": "Vegetable crop highly sensitive to water stress",
+      "phenological_stages": {
+        "initial": {
+          "description": "Planting to 10% ground cover",
+          "kc": 0.60,
+          "duration_days": 30
+        },
+        "development": {
+          "description": "Vegetative growth and flowering",
+          "kc": 1.00,
+          "duration_days": 40
+        },
+        "mid_season": {
+          "description": "Active fruit development",
+          "kc": 1.15,
+          "duration_days": 45
+        },
+        "late_season": {
+          "description": "Harvest and end of production",
+          "kc": 0.80,
+          "duration_days": 30
+        }
+      },
+      "total_cycle_days": 145,
+      "irrigation_interval": [3, 5],
+      "water_stress_sensitivity": "very high"
+    },
+    "grapevine": {
+      "full_name": "GRAPEVINE",
+      "scientific_name": "Vitis vinifera",
+      "type": "perennial crop",
+      "description": "Deep-rooted perennial crop, resistant to moderate water stress",
+      "phenological_stages": {
+        "initial": {
+          "description": "Bud break to flowering",
+          "kc": 0.30,
+          "duration_days": 40
+        },
+        "development": {
+          "description": "Fruit set and berry growth",
+          "kc": 0.70,
+          "duration_days": 50
+        },
+        "mid_season": {
+          "description": "Veraison to maturity",
+          "kc": 0.85,
+          "duration_days": 40
+        },
+        "late_season": {
+          "description": "Post-harvest and wood ripening",
+          "kc": 0.45,
+          "duration_days": 30
+        }
+      },
+      "total_cycle_days": 160,
+      "irrigation_interval": [7],
+      "water_stress_sensitivity": "low to medium"
+    }
+  },
+  "general_recommendations": {
+    "irrigation_interval_sandy_soil": 3,
+    "irrigation_interval_balanced_soil": 5,
+    "irrigation_interval_clay_soil": 7,
+    "notes": "The recommended irrigation interval depends on soil type, crop variety, and local climate. Kc values may vary according to specific varieties and environmental conditions."
+  }
+}

@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ## Description
-**AgriWater** is a specialized Python-based decision support tool designed to estimate crop irrigation requirements. By implementing the **FAO-56 Penman-Monteith methodology**, it bridges the gap between raw meteorological data and actionable agronomic insights.
+**AgriWater** is a specialized Python-based decision support tool designed to estimate crop irrigation requirements. By implementing the **[FAO-56 Penman-Monteith methodology](https://www.fao.org/4/X0490E/x0490e06.htm#chapter%202%20%20%20fao%20penman%20monteith%20equation)**, it bridges the gap between raw meteorological data and actionable agronomic insights.
 
 The project combines:
 * **Real-time weather data** integration via the Open-Meteo API.
@@ -16,22 +16,25 @@ The project combines:
 **Goal:** To help farmers and AgTech professionals optimize water use based on real-time biological needs rather than static schedules.
 
 
+## Agronomic concepts used in this project
+- **Kc (crop coefficient)** represents the difference in the amount of water lost throught evapotranspiration between a specific non stressed crop and a hypothetical, well-watered grass reference. It changes according to the growing stage of the plant and is plant specific.  
 
-## Key Features
-* **Reference Evapotranspiration ($ET_0$)**: Precise calculation using the FAO Penman-Monteith equation.
-* **Crop Evapotranspiration ($ET_c$)**: Support for multiple crops (Wheat, Maize, Tomato, Grapevine).
-* **Phenological Tracking**: Integration of Crop Coefficients ($K_c$) tailored to specific growth stages.
-* **Rainfall Integration**: Automated analysis of precipitation over 3, 5, or 7-day windows.
-* **Irrigation Recommendations**: Dynamic output provided in $m^3/ha$.
-* **Data Export**: Results available in CSV format.
+![alt text](docs/images/KC.png)
 
+It integrates the characteristics of the crops (height, leaf area, canopy roughness, amount of soil exposed) that affect its water use. Here are the values we are going to use for the crops (Wheat, Maize, Tomato, Grapevine), studied in this project (FAO-56 reference) :
 
-## Scientific Methodology
+| Crop| Initial stage | Development stage | Mid-season | End of season |
+|--------|---------------|---------------|---------------|---------------|
+| Wheat    | 0.30          | 0.75          | 1.15          | 0.40          |
+| Corn   | 0.30          | 0.80          | 1.20          | 0.60          |
+| Tomato | 0.60          | 1.00          | 1.15          | 0.80          |
+| Vine  | 0.30          | 0.70          | 0.85          | 0.45          |
 
-The engine follows the **FAO Irrigation and Drainage Paper No. 56** standards.
+- **Crop Evapotranspiration ($ET_c$)**: This represents the actual water demand of a given crop under specific conditions to grow optimally. 
 
-### 1. Reference Evapotranspiration ($ET_0$)
-The model calculates evaporation from a hypothetical grass reference crop using the standardized Penman-Monteith equation:
+![alt text](docs/images/ETc.png)
+
+- **Reference Evapotranspiration ($ET_0$)**: This reprensents the amount of water lost from a hypothetical, standardized surface (a large field of short gree, actively growing and well-watered grass). There are several methods to calculate it, but the FAO standardized Penman-Monteith equation is the most accurate and widely accepted and is the one we are using in this project. Here is its equation : 
 
 $$ET_0 = \frac{0.408 \Delta (R_n - G) + \gamma \frac{900}{T + 273} u_2 (e_s - e_a)}{\Delta + \gamma (1 + 0.34 u_2)}$$
 
@@ -42,12 +45,26 @@ $$ET_0 = \frac{0.408 \Delta (R_n - G) + \gamma \frac{900}{T + 273} u_2 (e_s - e_
 * $u_2$ is the wind speed at 2m height.
 * $(e_s - e_a)$ represents the vapor pressure deficit.
 
-### 2. Crop Evapotranspiration ($ET_c$)
-We adjust the reference value using a specific crop coefficient based on the current growth stage:
+(Note : it exists a simplified alternative if needed : the Hargreaves equation that is less accurate but only needs temperatures).
 
-$$ET_c = ET_0 \times K_c$$
+- Reminder : (useful conversions used) 
+    - 1 mm = 1 L/m²
+    - 1 mm on 1 hectare = 10 m³
+    - 1 hectare = 10,000 m²
 
-### 3. Net Irrigation Requirement
+## Key Features
+* **Reference Evapotranspiration ($ET_0$)**: Precise calculation using the FAO Penman-Monteith equation.
+* **Crop Evapotranspiration ($ET_c$)**: 
+* **Phenological Tracking**: Integration of Crop Coefficients ($K_c$) tailored to specific growth stages.
+* **Rainfall Integration**: Automated analysis of precipitation over 3, 5, or 7-day windows.
+* **Irrigation Recommendations**: Dynamic output provided in $m^3/ha$.
+* **Data Export**: Results available in CSV format.
+
+## Scientific Methodology
+
+The engine follows the **FAO Irrigation and Drainage Paper No. 56** standards.
+
+**Net Irrigation Requirement** : 
 The final recommendation considers the effective rainfall ($P_{eff}$) to avoid over-irrigation:
 
 $$Requirement = ET_c - P_{eff}$$
@@ -62,7 +79,7 @@ $$Requirement = ET_c - P_{eff}$$
 ### Setup
 ```bash
 # Clone the repository
-git clone [https://github.com/Mounia-Agronomist-Datascientist/Agriwater.git](https://github.com/Mounia-Agronomist-Datascientist/Agriwater.git)
+git clone https://github.com/Mounia-Agronomist-Datascientist/Agriwater.git
 cd agriwater
 
 # Create and activate a virtual environment

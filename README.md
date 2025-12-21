@@ -19,7 +19,7 @@ The project combines:
 ## Agronomic concepts used in this project
 - **Kc (crop coefficient)** represents the difference in the amount of water lost throught evapotranspiration between a specific non stressed crop and a hypothetical, well-watered grass reference. It changes according to the growing stage of the plant and is plant specific.  
 
-![alt text](docs/images/KC.png)
+![alt text](docs/images/Kc_according_to_stages.png)
 
 It integrates the characteristics of the crops (height, leaf area, canopy roughness, amount of soil exposed) that affect its water use. Here are the values we are going to use for the crops (Wheat, Maize, Tomato, Grapevine), studied in this project (FAO-56 reference) :
 

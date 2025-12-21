@@ -1,5 +1,5 @@
 """
-                          ---------  Weather data retrieval module via the Open-Meteo API -------------
+Weather data retrieval module via the Open-Meteo API
 
 This module retrieves:
 - Temperatures (min, mean, max)
@@ -11,7 +11,7 @@ This module retrieves:
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from src.utils import coordinates_validation
 
 class MeteoAPI:
     """
@@ -28,31 +28,55 @@ class MeteoAPI:
         self.base_url = "https://archive-api.open-meteo.com/v1/archive"
         
         # Coordinate validation
-        if not (-90 <= latitude <= 90):
-            raise ValueError(f"Invalid Latitude: {latitude}. Must be between -90 and 90.")
-        if not (-180 <= longitude <= 180):
-            raise ValueError(f"Invalid Longitude: {longitude}. Must be between -180 and 180.")
-        
+        coordinates_validation(latitude,longitude)
         self.latitude = latitude
         self.longitude = longitude
+            
 
-
-
-    def _calculate_date_range(self, days_count: int) -> Tuple[str, str]:
+    def _calculate_date_range(self, days_count: int) -> tuple[str, str]:
         """
         Calculates the date range for the API request.
         
         - Args: days_count (int): Number of days to retrieve (counting back from today)
         - Returns: Tuple[str, str]: (start_date, end_date) in ISO format (YYYY-MM-DD)
         """
+        
         today = datetime.today()
         start_date = (today.date() - timedelta(days=days_count)).isoformat()
         end_date = today.date().isoformat()
+
         return start_date, end_date
 
 
 
-    def fetch_weather_data(self, days_count: int = 10) -> Optional[pd.DataFrame]:
+    def _parse_response_to_dataframe(self, data: dict) -> pd.DataFrame:
+        """
+        Converts the API JSON response into a pandas DataFrame.
+        
+        - Args: data (dict): API JSON response
+        - Returns: pd.DataFrame: Structured DataFrame with weather data
+        """
+
+        # Extract daily data
+        daily_data = data["daily"]
+        
+        # Create DataFrame
+        df_weather = pd.DataFrame({
+            "date": pd.to_datetime(daily_data["time"]),
+            "temp_min": daily_data["temperature_2m_min"],
+            "temp_mean": daily_data["temperature_2m_mean"],
+            "temp_max": daily_data["temperature_2m_max"],
+            "et0_fao": daily_data["et0_fao_evapotranspiration"],
+            "precipitation": daily_data["precipitation_sum"]
+        })
+        
+        # Replace None values with 0 (assuming no rain/ET0 if data is missing)
+        df_weather = df_weather.fillna(0)
+        
+        return df_weather
+
+    
+    def fetch_weather_data(self, days_count: int = 10) -> pd.DataFrame|None:
         """
         Fetches weather data from the Open-Meteo API.
         
@@ -95,8 +119,8 @@ class MeteoAPI:
             # Create DataFrame
             df_weather_data = self._parse_response_to_dataframe(data)
             
-            print(f"Weather data successfully retrieved for {days_count} days")
-            print(f"Period: \n-Beginning : {start_date},\n-End : {end_date}")
+            print(f"\nWeather data successfully retrieved for {days_count} days")
+            print(f"Period: \n- Beginning : {start_date},\n- End : {end_date}")
             
             return df_weather_data
             
@@ -115,34 +139,7 @@ class MeteoAPI:
             return None
 
 
-
-    def _parse_response_to_dataframe(self, data: dict) -> pd.DataFrame:
-        """
-        Converts the API JSON response into a pandas DataFrame.
-        
-        - Args: data (dict): API JSON response
-        - Returns: pd.DataFrame: Structured DataFrame with weather data
-        """
-
-        # Extract daily data
-        daily_data = data["daily"]
-        
-        # Create DataFrame
-        df = pd.DataFrame({
-            "date": pd.to_datetime(daily_data["time"]),
-            "temp_min": daily_data["temperature_2m_min"],
-            "temp_mean": daily_data["temperature_2m_mean"],
-            "temp_max": daily_data["temperature_2m_max"],
-            "et0_fao": daily_data["et0_fao_evapotranspiration"],
-            "precipitation": daily_data["precipitation_sum"]
-        })
-        
-        # Replace None values with 0 (assuming no rain/ET0 if data is missing)
-        df = df.fillna(0)
-        
-        return df
-
-    def get_location_info(self) -> dict:
+    def get_location_info(self) -> dict[str,int|float]:
         """
         Returns location information.
         

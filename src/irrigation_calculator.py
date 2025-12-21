@@ -9,14 +9,17 @@ This module combines:
 Author: Mounia Tonazzini
 Date: December 2025
 """
-
+import sys
+import os
 import pandas as pd
 from typing import Dict, Optional
-import os
-import sys
-from meteo_api import MeteoAPI
-from utils import CropDatabase
-from evapotranspiration import EvapotranspirationCalculator
+
+# Add parent directory to path to allow imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.meteo_api import MeteoAPI
+from src.utils import CropDatabase
+from src.evapotranspiration import EvapotranspirationCalculator
 
 class IrrigationCalculator:
     """
@@ -44,8 +47,7 @@ class IrrigationCalculator:
         longitude: float,
         crop_name: str,
         crop_stage: str = "mid_season",
-        surface_ha: float = 1.0,
-        crop_db_path: str = "../data/crops_parameters.json"
+        surface_ha: float = 1.0
     ):
         """
         Initialize the irrigation calculator.
@@ -56,7 +58,7 @@ class IrrigationCalculator:
             - crop_name (str): Name of the crop ('WHEAT', 'MAIZE', 'TOMATO', 'GRAPEVINE')
             - crop_stage (str): Phenological stage ('initial', 'development', 'mid_season', 'late_season')
             - surface_ha (float): Surface area in hectares (default: 1.0)
-            - crop_db_path (str): Path to crop parameters JSON file
+         
             
         Raises:ValueError: If crop or stage is invalid
         """
@@ -71,7 +73,7 @@ class IrrigationCalculator:
         self.meteo_api = MeteoAPI(latitude=latitude, longitude=longitude)
         
         # Initialize crop database
-        self.crop_db = CropDatabase(json_path=crop_db_path)
+        self.crop_db = CropDatabase()
         
         # Validate crop and stage
         self._validate_crop_and_stage()
@@ -285,6 +287,7 @@ class IrrigationCalculator:
         return weather_with_etc
 
 
+
 # __________ Example usage for testing __________ 
 
 if __name__ == "__main__":
@@ -317,7 +320,9 @@ if __name__ == "__main__":
         weather_summary = calc_grapevine.get_weather_summary()
         print(weather_summary[['date', 'temp_mean', 'et0_fao', 'precipitation', 'etc']].to_string(index=False))
 
-        
+        # Create visualizations
+        calc_grapevine.create_visualizations()
+
         # Example 2: Test with invalid crop (error handling)
         print("\n\n" + "="*70)
         

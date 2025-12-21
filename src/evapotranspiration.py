@@ -14,7 +14,7 @@ import pandas as pd
 from typing import Dict, Optional
 
 # Import conversion functions from utils module
-from utils import convert_mm_to_m3_per_ha, convert_m3_to_mm
+from src.utils import convert_mm_to_m3_per_ha, convert_m3_to_mm
 
 
 
@@ -31,7 +31,7 @@ class EvapotranspirationCalculator:
 
     def __init__(self, weather_data: pd.DataFrame, crop_kc: float, crop_name: str = "unknown"):
         """
-        Initialize the evapotranspiration calculator.
+        Initializes the evapotranspiration calculator.
         
         Args:
             - weather_data (pd.DataFrame): DataFrame with columns ['date', 'et0_fao', 'precipitation']
@@ -65,7 +65,7 @@ class EvapotranspirationCalculator:
     
     def calculate_etc(self) -> pd.DataFrame:
         """
-        Calculate crop evapotranspiration (ETc) for each day.
+        Calculates crop evapotranspiration (ETc) for each day.
         
         Formula: ETc = ET0 x Kc
         
@@ -79,7 +79,7 @@ class EvapotranspirationCalculator:
     
     def calculate_cumulative_precipitation(self, period_days: int = 7) -> float:
         """
-        Calculate cumulative precipitation over a specified period.
+        Calculates cumulative precipitation over a specified period.
         
         Args: period_days (int): Number of days to consider (default: 7)
             
@@ -94,7 +94,7 @@ class EvapotranspirationCalculator:
     
     def calculate_average_etc(self, period_days: Optional[int] = None) -> float:
         """
-        Calculate average daily ETc over a period.
+        Calculates average daily ETc over a period.
         
         Args: period_days (int, optional): Number of days to consider. 
         If None, uses all available data.
@@ -114,12 +114,11 @@ class EvapotranspirationCalculator:
         print(f"Average daily ETc for {self.crop_name}: {avg_etc:.2f} mm/day")
         return avg_etc
     
-
     
     
     def calculate_irrigation_need(self, period_days: int = 7, efficiency: float = 0.85) -> Dict[str, float]:
         """
-        Calculate net irrigation needs based on ETc and precipitation.
+        Calculates net irrigation needs based on ETc and precipitation.
         
         Args:
             - period_days (int): Number of days to consider for precipitation (default: 7)
@@ -166,7 +165,7 @@ class EvapotranspirationCalculator:
     def calculate_irrigation_volume(self, surface_ha: float, period_days: int = 7, 
                                    efficiency: float = 0.85) -> Dict[str, float]:
         """
-        Calculate irrigation volume needed for a given surface area.
+        Calculates irrigation volume needed for a given surface area.
         
         Args:
             - surface_ha (float): Surface area in hectares

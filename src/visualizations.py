@@ -11,10 +11,12 @@ Author: Mounia Tonazzini
 Date: December 2025
 """
 
+import os
 import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Optional
 import seaborn as sns
+
 
 # Set style for all plots
 sns.set_style("whitegrid")
@@ -49,7 +51,7 @@ class IrrigationVisualizer:
     
     def plot_weather_overview(self, save_path: Optional[str] = None) -> None:
         """
-        Create a comprehensive weather overview plot with ET0 and precipitation.
+        Creates a comprehensive weather overview plot with ET0 and precipitation.
         
         Args:save_path (str, optional): Path to save the figure. If None, displays the plot.
         """
@@ -103,7 +105,7 @@ class IrrigationVisualizer:
     
     def plot_etc_comparison(self, save_path: Optional[str] = None) -> None:
         """
-        Create a comparison plot between ET0 and ETc.
+        Creates a comparison plot between ET0 and ETc.
         
         Args:save_path (str, optional): Path to save the figure. If None, displays the plot.
         """
@@ -151,7 +153,7 @@ class IrrigationVisualizer:
     
     def plot_water_balance(self, period_days: int = 7, save_path: Optional[str] = None) -> None:
         """
-        Create a water balance visualization showing ETc, precipitation, and net irrigation need.
+        Creates a water balance visualization showing ETc, precipitation, and net irrigation need.
         
         Args:
             period_days (int): Number of days to consider for the balance
@@ -204,7 +206,7 @@ class IrrigationVisualizer:
         
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"✅ Water balance plot saved to {save_path}")
+            print(f"Water balance plot saved to {save_path}")
         else:
             plt.show()
         
@@ -215,12 +217,12 @@ class IrrigationVisualizer:
                                       irrigation_results: dict,
                                       save_path: Optional[str] = None) -> None:
         """
-        Create a visual summary of irrigation recommendations.
+        Creates a visual summary of irrigation recommendations.
         
         Args:
-            surface_ha (float): Surface area in hectares
-            irrigation_results (dict): Results from irrigation calculator
-            save_path (str, optional): Path to save the figure
+            - surface_ha (float): Surface area in hectares
+            - irrigation_results (dict): Results from irrigation calculator
+            - save_path (str, optional): Path to save the figure
         """
         fig, ax = plt.subplots(figsize=(10, 6))
         
@@ -269,7 +271,7 @@ class IrrigationVisualizer:
     def create_all_plots(self, surface_ha: float, irrigation_results: dict,
                         output_dir: str = "output") -> None:
         """
-        Create all visualization plots and save them to a directory.
+        Creates all visualization plots and save them to a directory.
         
         Args:
             - surface_ha (float): Surface area in hectares

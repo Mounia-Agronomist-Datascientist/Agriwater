@@ -17,7 +17,7 @@ from typing import Tuple
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from src.irrigation_calculator import IrrigationCalculator
-from src.utils import CropDatabase
+from src.crop_database import CropDatabase
 from src.visualizations import IrrigationVisualizer
 from rich.console import Console
 from rich.prompt import Prompt, FloatPrompt, IntPrompt
@@ -294,7 +294,8 @@ class AgriWaterCLI:
                 )
             
             elif choice == "2":
-                if self.calculator.results_df is None:
+                result_df = self.calculator.calculate_irrigation_needs(period_days=period_days, efficiency=efficiency)
+                if result_df is None:
                     print("No results available. Please run a calculation first.")
                     return
                 
@@ -303,11 +304,11 @@ class AgriWaterCLI:
                 
                 # Create visualizations
                 visualizer=IrrigationVisualizer(
-                    weather_data=self.calculator.results_df,
+                    weather_data=self.calculator.weather_data,
                     crop_name=self.calculator.crop_name,
                     crop_kc=self.calculator.crop_kc
                 )
-                visualizer.create_all_plots()
+                visualizer.create_all_plots(surface_ha=self.calculator.surface_ha,irrigation_results=result_df)
             
             elif choice == "3":
                 # Display crop info

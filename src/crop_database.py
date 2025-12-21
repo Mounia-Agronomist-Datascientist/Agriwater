@@ -73,6 +73,67 @@ class CropDatabase:
         return list(self.data["crops"].keys())
     
 
+    
+    def validate_crop_and_stage(self,crop_name: str, crop_stage: str) -> None:
+        """
+        Validate that the crop and stage exist in the database.
+        
+        Args:
+            - crop_name (str): Crop name to validate
+            - crop_stage (str): Growth stage to validate
+
+        Raises:ValueError: If crop or stage is invalid
+        """
+        # Validate if crop exists
+        available_crops = self.get_available_crops()
+        crop_name_lower = crop_name.lower()
+        
+        if crop_name_lower not in available_crops:
+            raise ValueError(
+                f"Invalid crop: '{crop_name}'. "
+                f"Available crops: {', '.join(available_crops)}"
+            )
+        
+        # Validate if stage exists for this crop
+        crop_info = self.get_crop_info(crop_name_lower)
+        available_stages = list(crop_info["phenological_stages"].keys())
+        stage_lower=crop_stage.lower()
+        
+        if stage_lower not in available_stages:
+            raise ValueError(
+                f"Invalid stage: '{crop_stage}'. "
+                f"Available stages for {crop_name}: {', '.join(available_stages)}"
+            )
+        
+    def crop_exists(self, crop_name: str) -> bool:
+        """
+        Check if a crop exists in the database.
+        
+        Args: crop_name (str): Crop name to check
+            
+        Returns:bool: True if crop exists, False otherwise
+        """
+        return crop_name.lower() in self.get_available_crops()
+    
+    
+    def stage_exists(self, crop_name: str, crop_stage: str) -> bool:
+        """
+        Check if a growth stage exists for a given crop.
+        
+        Args:
+            - crop_name (str): Crop name
+            - crop_stage (str): Growth stage to check
+            
+        Returns:
+            - bool: True if stage exists for this crop, False otherwise
+        """
+        crop_info = self.get_crop_info(crop_name)
+        if crop_info is None:
+            return False
+        
+        return crop_stage.lower() in crop_info["phenological_stages"]
+
+
 
     def get_crop_info(self, crop_name: str)-> dict[str, Any]| None:
         """
@@ -96,13 +157,13 @@ class CropDatabase:
     
 
 
-    def get_kc_for_stage(self, crop_name: str, stage: str) -> float | None:
+    def get_kc_for_stage(self, crop_name: str, crop_stage: str) -> float | None:
         """
         Returns the Kc coefficient for a given phenological stage.
         
         Args:
             - crop_name (str): Name of the crop (e.g., 'maize')
-            - stage (str): Phenological stage ('initial', 'development', 'mid_season', 'late_season')
+            - crop_stage (str): Phenological stage ('initial', 'development', 'mid_season', 'late_season')
             
         Returns:
             - float: Kc value.
@@ -114,12 +175,12 @@ class CropDatabase:
         if crop_info is None:
             return None
             
-        if stage not in crop_info["phenological_stages"]:
-            print(f"Stage '{stage}' not found for crop '{crop_name}'.")
+        if crop_stage not in crop_info["phenological_stages"]:
+            print(f"Stage '{crop_stage}' not found for crop '{crop_name}'.")
             print(f"Available stages: {', '.join(crop_info['phenological_stages'].keys())}")
             return None
             
-        return crop_info["phenological_stages"][stage]["kc"]
+        return crop_info["phenological_stages"][crop_stage]["kc"]
     
 
 
@@ -193,9 +254,26 @@ if __name__ == "__main__":
         maize_kc = db.get_kc_for_stage("maize", "development")
         print(f"Maize Kc (development) = {maize_kc}")
         
-        # Non-existent crop test
-        print("\nTest: Non-existent crop")
-        db.get_crop_info("banana")
+        # Test validation
+        print("\nTest: Validate crop and stage")
+        try:
+            db.validate_crop_and_stage("maize", "mid_season")
+            print("Corn + mid-season is valid")
+        except ValueError as e:
+            print(f"Error: {e}")
         
+        try:
+            db.validate_crop_and_stage("banana", "mid_season")
+            print("Banana + mid-season is valid")
+        except ValueError as e:
+            print(f"Expected error caught: {e}")
+        
+        # Test existence checks
+        print("\nTest: Check existence")
+        print(f"Maize exists: {db.crop_exists('maize')}")
+        print(f"Banana exists: {db.crop_exists('banana')}")
+        print(f"Corn has 'mid_season' stage: {db.stage_exists('maize', 'mid_season')}")
+        print(f"Wheat has 'invalid_stage': {db.stage_exists('wheat', 'invalid_stage')}")
+    
     except Exception as e:
         print(f"Error: {e}")

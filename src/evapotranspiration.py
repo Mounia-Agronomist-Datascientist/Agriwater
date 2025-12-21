@@ -11,7 +11,6 @@ Date: December 2025
 """
 
 import pandas as pd
-from typing import Dict, Optional
 
 # Import conversion functions from utils module
 from src.utils import convert_mm_to_m3_per_ha, convert_m3_to_mm
@@ -41,6 +40,7 @@ class EvapotranspirationCalculator:
         Raises:
             ValueError: If required columns are missing or Kc is invalid
         """
+        
         # Validate required columns
         required_cols = ['date', 'et0_fao', 'precipitation']
         missing_cols = [col for col in required_cols if col not in weather_data.columns]
@@ -86,13 +86,13 @@ class EvapotranspirationCalculator:
         Returns: float: Total precipitation in mm over the period
         """
         
-        total_precipitation = self.weather_data['precipitation'].tail(period_days).sum()
+        total_precipitation = self.weather_data['precipitation'].tail(period_days).sum() # Sum of the precipitations of the last "period_days" days
         print(f"Cumulative precipitation over last {period_days} days: {total_precipitation:.2f} mm")
         
         return total_precipitation
     
     
-    def calculate_average_etc(self, period_days: Optional[int] = None) -> float:
+    def calculate_average_etc(self, period_days: int|None = None) -> float:
         """
         Calculates average daily ETc over a period.
         
@@ -116,7 +116,7 @@ class EvapotranspirationCalculator:
     
     
     
-    def calculate_irrigation_need(self, period_days: int = 7, efficiency: float = 0.85) -> Dict[str, float]:
+    def calculate_irrigation_need(self, period_days: int = 7, efficiency: float = 0.85) -> dict[str, float]:
         """
         Calculates net irrigation needs based on ETc and precipitation.
         
@@ -163,7 +163,7 @@ class EvapotranspirationCalculator:
     
     
     def calculate_irrigation_volume(self, surface_ha: float, period_days: int = 7, 
-                                   efficiency: float = 0.85) -> Dict[str, float]:
+                                   efficiency: float = 0.85) -> dict[str, float]:
         """
         Calculates irrigation volume needed for a given surface area.
         

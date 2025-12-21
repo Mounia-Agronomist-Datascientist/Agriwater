@@ -14,7 +14,6 @@ Date: December 2025
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
-from typing import Optional
 import seaborn as sns
 
 
@@ -49,7 +48,7 @@ class IrrigationVisualizer:
             self.weather_data['etc'] = self.weather_data['et0_fao'] * self.crop_kc
     
     
-    def plot_weather_overview(self, save_path: Optional[str] = None) -> None:
+    def plot_weather_overview(self, save_path: str|None = None) -> None:
         """
         Creates a comprehensive weather overview plot with ET0 and precipitation.
         
@@ -103,7 +102,7 @@ class IrrigationVisualizer:
         plt.close()
     
     
-    def plot_etc_comparison(self, save_path: Optional[str] = None) -> None:
+    def plot_etc_comparison(self, save_path:  str|None = None) -> None:
         """
         Creates a comparison plot between ET0 and ETc.
         
@@ -151,7 +150,7 @@ class IrrigationVisualizer:
         plt.close()
     
     
-    def plot_water_balance(self, period_days: int = 7, save_path: Optional[str] = None) -> None:
+    def plot_water_balance(self, period_days: int = 7, save_path:  str|None = None) -> None:
         """
         Creates a water balance visualization showing ETc, precipitation, and net irrigation need.
         
@@ -215,7 +214,7 @@ class IrrigationVisualizer:
     
     def plot_irrigation_recommendation(self, surface_ha: float, 
                                       irrigation_results: dict,
-                                      save_path: Optional[str] = None) -> None:
+                                      save_path:  str|None = None) -> None:
         """
         Creates a visual summary of irrigation recommendations.
         

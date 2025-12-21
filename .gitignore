@@ -35,9 +35,6 @@ config_local.py
 *.csv
 output/
 
-# Images
-docs/images
-
 # Distribution / packaging
 build/
 dist/

@@ -11,14 +11,17 @@ Date: December 2025
 
 import sys
 import os
-from typing import Tuple
 
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+# Import created classes and functions
 from src.irrigation_calculator import IrrigationCalculator
 from src.crop_database import CropDatabase
 from src.visualizations import IrrigationVisualizer
+from src.utils import coordinates_validation
+
+# Tools for CLI visualisation
 from rich.console import Console
 from rich.prompt import Prompt, FloatPrompt, IntPrompt
 
@@ -35,7 +38,7 @@ class AgriWaterCLI:
     
     
     def print_header(self) -> None:
-        """Print application header."""
+        """Print application  and the way it works."""
      
         header = """
     ╔═══════════════════════════════════════════════════════════════╗
@@ -47,16 +50,25 @@ class AgriWaterCLI:
     ╚═══════════════════════════════════════════════════════════════╝
             """
         self.console.print(header, style="bright_green")
-   
+        print("Welcome to Agriwater, a water need calculation tool to help you evaluate your need of watering your culture.")
+        print("You will have to select several parameters in the following order") 
+        print("- 'Location Configuration' section : Your location (among a predefined list or your personalized coordinates),")
+        print("- 'Crop Parameters' section : Your crop, its stage of growth, and the surface,")
+        print("- 'Analysis Parameters' section : The number of last days for the weather data to collect and your irrigation efficiency,")
+        print("For each selection you will have to do, a default value is suggested into parenthesis.")
+        print("The application will then run will these information and provides you with the irrigation volume (if needed) and a full report.")
+        
     
-    def get_location(self) -> Tuple[float, float]:
+    
+
+    def get_location(self) -> tuple[float, float]:
         """
         Get location coordinates from user.
         
         Returns: Tuple[float, float]: (latitude, longitude)
         """
         
-        self.console.print("\n--- [bold]Location Configuration ---[/bold]", style="orange1")
+        self.console.print("\n--- [bold]Location Configuration ---[/bold]", style="bright_green")
         
         # Predefined locations
         locations = {
@@ -67,7 +79,7 @@ class AgriWaterCLI:
             "5": ("Custom", None, None)
         }
         
-        print("\nPredefined locations:\n")
+        print("\nLocations:\n")
         for key, (name, _, _) in locations.items():
             print(f"{key}. {name}")
         
@@ -83,7 +95,7 @@ class AgriWaterCLI:
                         lat = FloatPrompt.ask("Enter latitude (-90 to 90)")
                         lon = FloatPrompt.ask("Enter longitude (-180 to 180)")
 
-                        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                        if coordinates_validation(lat,lon) is not None:
                             print("Invalid coordinates. Please try again.")
                             continue
                     except ValueError:
@@ -97,14 +109,15 @@ class AgriWaterCLI:
                 print("Invalid choice. Please try again.")
     
     
-    def get_crop_selection(self) -> Tuple[str, str]:
+
+    def get_crop_selection(self) -> tuple[str, str]:
         """
         Get crop and growth stage selection from user.
         
         Returns:Tuple[str, str]: (crop_name, crop_stage)
         """
 
-        self.console.print("\n[bold]--- Crop Selection ---[/bold]", style="orange1")
+        self.console.print("\n[bold]--- Crop Parameters ---[/bold]", style="bright_green")
         
         # Get available crops
         available_crops = self.crop_db.get_available_crops()
@@ -158,6 +171,7 @@ class AgriWaterCLI:
         return crop_name, crop_stage
     
     
+
     def get_surface_area(self) -> float:
         """
         Get surface area from user.
@@ -166,7 +180,7 @@ class AgriWaterCLI:
         """
         while True:
             try:
-                surface = FloatPrompt.ask("Enter surface area in hectares", default=10.0)
+                surface = FloatPrompt.ask("\nEnter surface area in hectares", default=10.0)
 
                 if surface > 0:
                     print(f"Surface area: {surface:.2f} ha")
@@ -177,14 +191,15 @@ class AgriWaterCLI:
                 print("Invalid input. Please enter a valid number.")
     
     
-    def get_analysis_parameters(self) -> Tuple[int, float]:
+
+    def get_analysis_parameters(self) -> tuple[int, float]:
         """
-        Get analysis parameters (period and efficiency).
+        Gets analysis parameters (period and efficiency).
         
         Returns:Tuple[int, float]: (period_days, efficiency)
         """
 
-        self.console.print("\n[bold]--- Analysis Parameters ---[/bold]", style="orange1")
+        self.console.print("\n[bold]--- Analysis Parameters ---[/bold]", style="bright_green")
         
         # Period
         while True:
@@ -201,7 +216,7 @@ class AgriWaterCLI:
         # Efficiency
         while True:
             try:
-                efficiency = FloatPrompt.ask("Irrigation efficiency (0-1)", default=0.85)
+                efficiency = FloatPrompt.ask("\nIrrigation efficiency (0-1)", default=0.85)
 
                 if 0 < efficiency <= 1:
                     break
@@ -213,9 +228,12 @@ class AgriWaterCLI:
         print(f"Period: {period} days, Efficiency: {efficiency*100:.0f}%")
         return period, efficiency
     
+
+
     
     def run(self) -> None:
-        """Run the interactive CLI application."""
+        """Runs the interactive CLI application."""
+        
         self.print_header()
         
         try:
@@ -263,18 +281,17 @@ class AgriWaterCLI:
             sys.exit(1)
     
     
+
     def post_calculation_menu(self, period_days: int, efficiency: float) -> None:
         """
-        Display menu for additional actions after calculation.
+        Displays a menu for additional actions after calculation.
         
         Args:
             - period_days (int): Analysis period
             - efficiency (float): Irrigation efficiency
         """
         while True:
-            print("\n" + "="*70)
-            print("Additional Actions:")
-            print("="*70)
+            self.console.print("\n[bold]====== Additional Actions ======\n[/bold]", style="bright_green")
             print("   1. Export results to CSV")
             print("   2. Create visualizations")
             print("   3. Display crop information")
@@ -303,10 +320,10 @@ class AgriWaterCLI:
                 print(f"\nCreating visualizations in '{output_dir}/'...")
                 
                 # Create visualizations
-                visualizer=IrrigationVisualizer(
-                    weather_data=self.calculator.weather_data,
-                    crop_name=self.calculator.crop_name,
-                    crop_kc=self.calculator.crop_kc
+                visualizer = IrrigationVisualizer(
+                    weather_data = self.calculator.weather_data,
+                    crop_name = self.calculator.crop_name,
+                    crop_kc = self.calculator.crop_kc
                 )
                 visualizer.create_all_plots(surface_ha=self.calculator.surface_ha,irrigation_results=result_df)
             
@@ -316,9 +333,7 @@ class AgriWaterCLI:
             
             elif choice == "4":
                 # New calculation
-                print("\n" + "="*70)
-                print("Starting new calculation...")
-                print("="*70)
+                print("\nStarting new calculation...\n")
                 self.run()
                 break
             

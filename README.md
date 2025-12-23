@@ -59,10 +59,24 @@ $$ET_0 = \frac{0.408 \Delta (R_n - G) + \gamma \frac{900}{T + 273} u_2 (e_s - e_
 * **Rainfall Integration**: Automated analysis of precipitation over 3, 5, or 7-day windows.
 * **Irrigation Recommendations**: Dynamic output provided in $m^3/ha$.
 * **Data Export**: Results available in CSV format.
+* **Data visualizations**: 4 types of visualizations : 
+        - Weather overview (ET0, temperature, precipitation)
+        - ETc vs ET0 comparison
+        - Water balance analysis
+        - Irrigation recommendations summary
+
+* **Supported crops**:
+        - Wheat (Triticum aestivum)
+        - Corn (Zea mays)
+        - Tomato (Solanum lycopersicum)
+        - Grapevine (Vitis vinifera)
+
 
 ## Scientific Methodology
 
 The engine follows the **FAO Irrigation and Drainage Paper No. 56** standards.
+
+For more information, see : docs/methodology.md
 
 **Net Irrigation Requirement** : 
 The final recommendation considers the effective rainfall ($P_{eff}$) to avoid over-irrigation:
@@ -75,9 +89,10 @@ $$Requirement = ET_c - P_{eff}$$
 ### Prerequisites
 * Python 3.8 or higher
 * `pip` (Python package manager)
+* Internet connection (for weather data)
 
 ### Setup
-```bash
+```
 # Clone the repository
 git clone https://github.com/Mounia-Agronomist-Datascientist/Agriwater.git
 cd agriwater
@@ -91,3 +106,96 @@ python -m venv venv
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Verify installation
+python main.py --help
+```
+
+### Quick Start
+Run the interactive interface
+`python main.py`
+
+Follow the guided workflow:
+
+- Select a location (predefined or custom GPS coordinates)
+- Choose a crop and growth stage
+- Enter surface area in hectares
+- Set analysis parameters (period, efficiency)
+- View results and recommendations
+- Export data or create visualizations
+
+
+Quick example (Python script)
+```python
+from src.irrigation_calculator import IrrigationCalculator
+
+# Initialize calculator for corn in Montpellier
+calc = IrrigationCalculator(
+    latitude=43.6109,
+    longitude=3.8772,
+    crop_name="mais",
+    crop_stage="mi_saison",
+    surface_ha=10.0
+)
+
+# Calculate and display irrigation needs
+calc.display_full_report(period_days=7, efficiency=0.85)
+
+# Create visualizations
+calc.create_visualizations(output_dir="output")
+```
+
+### Project structure : 
+
+```python
+agriwater/
+│
+├── README.md                         # This file
+├── requirements.txt                  # Python dependencies
+├── LICENSE                           # MIT License
+├── .gitignore                        # Git ignore rules
+├── main.py                           # CLI entry point
+│
+├── data/                             # Data files
+│   └── crops_parameters.json         # Crop parameters (Kc, stages)
+│
+├── src/                              # Source code
+│   ├── __init__.py
+│   ├── meteo_api.py                  # Weather data retrieval
+│   ├── evapotranspiration.py         # ET0/ETc calculations
+│   ├── irrigation_calculator.py      # Main orchestration
+│   ├── visualizations.py             # Plot generation
+│   └── utils.py                      # Utilities (CultureDatabase, conversions)
+│
+├── notebooks/                        # Jupyter notebooks (optional)
+│   └── demo_agriwater.ipynb          # Interactive demo
+│
+├── tests/                            # Unit tests (optional)
+│   └── test_evapotranspiration.py
+│
+├── docs/                             # Documentation
+│   ├── methodology.md                # FAO-56 methodology explained
+│   └── guide_utilisation.md          # User guide (French)
+│
+└── output/                           # Generated outputs (created at runtime)
+    ├── *.png                         # Visualization plots
+    └── *.csv                         # Exported results
+
+```
+
+### License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+
+### Author
+Mounia Tonazzini
+Agricultural Engineer & Data Scientist | AI & AgriTech
+
+- Location: Montpellier, France
+- Email: mounia.tonazzini@gmail.com
+- LinkedIn: [www.linkedin.com/in/mounia-tonazzini](www.linkedin.com/in/mounia-tonazzini)
+- GitHub: Mounia-Agronomist-Datascientist
+
+### About Me
+Combining 7 years of experience in agriculture (supply chain, farm support, sustainable food systems) with data science skills, I develop tools that bridge the gap between agronomic knowledge and digital innovation. AgriWater was developed during my Data Science training at Jedha to demonstrate how AI and modeling can support precision agriculture.

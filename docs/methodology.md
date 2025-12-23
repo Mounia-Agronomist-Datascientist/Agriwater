@@ -243,7 +243,7 @@ Open-Meteo API
 Meteorological data and ET₀ source  
 https://open-meteo.com/
 
----
+
 
 ## Future Developments
 

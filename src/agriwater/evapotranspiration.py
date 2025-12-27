@@ -13,7 +13,7 @@ Date: December 2025
 import pandas as pd
 
 # Import conversion functions from utils module
-from src.utils import convert_mm_to_m3_per_ha, convert_m3_to_mm
+from src.agriwater.utils import convert_mm_to_m3_per_ha, convert_m3_to_mm
 
 
 
@@ -241,45 +241,45 @@ class EvapotranspirationCalculator:
             print(f"-> RECOMMENDATION: Irrigation required. Apply approximately {results['gross_volume_m3']:.0f} m³.")
 
 
-# __________ Example usage for testing  __________ 
+# # __________ Example usage for testing  __________ 
 
-if __name__ == "__main__":
-    print("Testing evapotranspiration module\n")
+# if __name__ == "__main__":
+#     print("Testing evapotranspiration module\n")
     
-    # Create sample weather data
-    dates = pd.date_range(start='2025-12-14', end='2025-12-20', freq='D')
-    sample_data = pd.DataFrame({
-        'date': dates,
-        'et0_fao': [1.2, 1.5, 1.8, 2.0, 1.6, 1.4, 1.3],
-        'precipitation': [0, 5.0, 2.0, 0, 0, 3.0, 0]
-    })
+#     # Create sample weather data
+#     dates = pd.date_range(start='2025-12-14', end='2025-12-20', freq='D')
+#     sample_data = pd.DataFrame({
+#         'date': dates,
+#         'et0_fao': [1.2, 1.5, 1.8, 2.0, 1.6, 1.4, 1.3],
+#         'precipitation': [0, 5.0, 2.0, 0, 0, 3.0, 0]
+#     })
     
-    print("Sample weather data:")
-    print(sample_data.to_string(index=False))
-    print()
+#     print("Sample weather data:")
+#     print(sample_data.to_string(index=False))
+#     print()
     
-    # Test with corn (Kc = 1.2 for mid-season)
-    try:
-        print("Testing with CORN (Kc = 1.2)")
-        print("-" * 50)
+#     # Test with corn (Kc = 1.2 for mid-season)
+#     try:
+#         print("Testing with CORN (Kc = 1.2)")
+#         print("-" * 50)
         
-        calc = EvapotranspirationCalculator(
-            weather_data=sample_data,
-            crop_kc=1.2,
-            crop_name="Corn"
-        )
+#         calc = EvapotranspirationCalculator(
+#             weather_data=sample_data,
+#             crop_kc=1.2,
+#             crop_name="Corn"
+#         )
         
-        # Calculate and display irrigation summary
-        calc.display_irrigation_summary(
-            surface_ha=10.0,
-            period_days=7,
-            efficiency=0.85
-        )
+#         # Calculate and display irrigation summary
+#         calc.display_irrigation_summary(
+#             surface_ha=10.0,
+#             period_days=7,
+#             efficiency=0.85
+#         )
         
-        # Test conversion functions
-        print("\nTesting conversion functions:")
-        print(f"- 10 mm = {convert_mm_to_m3_per_ha(10):.0f} m³/ha")
-        print(f"- 100 m³ on 5 ha = {convert_m3_to_mm(100, 5):.1f} mm")
+#         # Test conversion functions
+#         print("\nTesting conversion functions:")
+#         print(f"- 10 mm = {convert_mm_to_m3_per_ha(10):.0f} m³/ha")
+#         print(f"- 100 m³ on 5 ha = {convert_m3_to_mm(100, 5):.1f} mm")
         
-    except Exception as e:
-        print(f"Error during testing: {e}")
+#     except Exception as e:
+#         print(f"Error during testing: {e}")

@@ -61,8 +61,11 @@ def convert_m3_to_mm(m3: float, surface_ha: float) -> float:
         - surface_ha (float): Surface area in hectares
     
     Returns:float: Water depth in mm
+    Raises: ValueError if surface_ha is not positive
     """
-
+    if surface_ha <= 0:
+        raise ValueError("Surface area must be positive")
+    
     return m3 / (10 * surface_ha)  # m³ / (10 * ha) = mm
 
 

@@ -308,8 +308,8 @@ if __name__ == "__main__":
     import os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     
-    from src.meteo_api import MeteoAPI
-    from src.evapotranspiration import EvapotranspirationCalculator
+    from src.agriwater.meteo_api import MeteoAPI
+    from src.agriwater.evapotranspiration import EvapotranspirationCalculator
     
     print("="*70)
     print("TESTING VISUALIZATION MODULE")

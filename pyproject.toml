@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agriwater"
+version = "0.1.0"
+authors = [
+  { name="Mounia Tonazzini", email="mounia.tonazzini@gmail.com" },
+]
+description = "A specialized decision support tool for crop irrigation requirements based on FAO-56."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Agriculture",
+]
+# Dependencies
+dependencies = [
+    "requests>=2.31.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+]
+
+[project.scripts]
+# This line allows us to run the app by writing 'agriwater' in the terminal
+agriwater = "agriwater.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# We include the JSON file when installing
+agriwater = ["data/*.json"]

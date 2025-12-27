@@ -107,7 +107,7 @@ python -m venv venv
 # Install the project in editable mode with its dependencies
 pip install -e .
 
-# Now you can run it from anywhere!
+# Now you can run it from anywhere
 agriwater --help
 
 ```

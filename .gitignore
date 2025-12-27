@@ -1,5 +1,6 @@
 # Python Files
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *$py.class
 *.so
@@ -10,6 +11,7 @@ venv/
 env/
 ENV/
 .venv
+env_agriwater
 
 # Jupyter Notebook
 .ipynb_checkpoints

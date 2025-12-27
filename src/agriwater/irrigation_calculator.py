@@ -16,10 +16,10 @@ import pandas as pd
 # Add parent directory to path to allow imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.meteo_api import MeteoAPI
-from src.utils import coordinates_validation, validate_area
-from src.evapotranspiration import EvapotranspirationCalculator
-from src.crop_database import CropDatabase
+from src.agriwater.meteo_api import MeteoAPI
+from src.agriwater.utils import coordinates_validation, validate_area
+from src.agriwater.evapotranspiration import EvapotranspirationCalculator
+from src.agriwater.crop_database import CropDatabase
 
 
 class IrrigationCalculator:

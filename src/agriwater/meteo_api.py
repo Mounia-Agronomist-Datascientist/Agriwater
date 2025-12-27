@@ -11,7 +11,7 @@ This module retrieves:
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from src.utils import coordinates_validation
+from src.agriwater.utils import coordinates_validation
 
 class MeteoAPI:
     """

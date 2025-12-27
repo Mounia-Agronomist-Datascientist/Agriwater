@@ -12,18 +12,17 @@ Date: December 2025
 import sys
 import os
 
-# Add src to path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
 # Import created classes and functions
-from src.irrigation_calculator import IrrigationCalculator
-from src.crop_database import CropDatabase
-from src.visualizations import IrrigationVisualizer
-from src.utils import coordinates_validation
+from src.agriwater.irrigation_calculator import IrrigationCalculator
+from src.agriwater.crop_database import CropDatabase
+from src.agriwater.visualizations import IrrigationVisualizer
+from src.agriwater.utils import coordinates_validation
 
 # Tools for CLI visualisation
 from rich.console import Console
 from rich.prompt import Prompt, FloatPrompt, IntPrompt
+
+
 
 class AgriWaterCLI:
     """
@@ -38,7 +37,7 @@ class AgriWaterCLI:
     
     
     def print_header(self) -> None:
-        """Print application  and the way it works."""
+        """Print application title and the way it works."""
      
         header = """
     ╔═══════════════════════════════════════════════════════════════╗
@@ -50,13 +49,13 @@ class AgriWaterCLI:
     ╚═══════════════════════════════════════════════════════════════╝
             """
         self.console.print(header, style="bright_green")
-        print("Welcome to Agriwater, a water need calculation tool to help you evaluate your need of watering your culture.")
-        print("You will have to select several parameters in the following order") 
-        print("- 'Location Configuration' section : Your location (among a predefined list or your personalized coordinates),")
-        print("- 'Crop Parameters' section : Your crop, its stage of growth, and the surface,")
-        print("- 'Analysis Parameters' section : The number of last days for the weather data to collect and your irrigation efficiency,")
-        print("For each selection you will have to do, a default value is suggested into parenthesis.")
-        print("The application will then run will these information and provides you with the irrigation volume (if needed) and a full report.")
+        print("Welcome to Agriwater, a water requirement calculator designed to help you evaluate your irrigation needs.")
+        print("You will be asked to configure the following parameters in order:") 
+        print("- 'Location Configuration' section : Select your location from a predefined list or enter custom coordinates,")
+        print("- 'Crop Parameters' section : Select your crop, its growth stage, and the total area in hectares,")
+        print("- 'Analysis Parameters' section : Set the number of previous days for weather data collection and your irrigation efficiency,")
+        print("For each selection, a default value is shown in parentheses.")
+        print("The application will process this information to provide the required irrigation volume and a detailed report.")
         
     
     
@@ -174,21 +173,19 @@ class AgriWaterCLI:
 
     def get_surface_area(self) -> float:
         """
-        Get surface area from user.
-        
-        Returns: float: Surface area in hectares
+        Get surface area from user in hectares.
         """
         while True:
             try:
-                surface = FloatPrompt.ask("\nEnter surface area in hectares", default=10.0)
+                area = FloatPrompt.ask("\nEnter field area in hectares", default=10.0)
 
-                if surface > 0:
-                    print(f"Surface area: {surface:.2f} ha")
-                    return surface
+                if area > 0:
+                    print(f"Area set to : {area:.2f} ha")
+                    return area
                 else:
-                    print("Surface area must be positive.")
+                    self.console.print("[red]Area must be a positive number.[/red]")
             except ValueError:
-                print("Invalid input. Please enter a valid number.")
+                self.console.print("[red]Invalid input. Please enter a number.[/red]")
     
     
 
@@ -231,10 +228,11 @@ class AgriWaterCLI:
 
 
     
-    def run(self) -> None:
-        """Runs the interactive CLI application."""
-        
-        self.print_header()
+    def run_calculation_flow(self) -> bool:
+        """
+        Runs the interactive CLI application.
+        Returns True if the user wants to run a new analysis, False otherwise
+        """
         
         try:
             # Step 1: Get location
@@ -261,7 +259,7 @@ class AgriWaterCLI:
             )
             
             # Step 6: Display results
-            self.console.print("\n[bold]Calculating irrigation needs...[/bold]", style="cyan")
+            self.console.print("\n[bold]Processing weather data and calculating irrigation needs...[/bold]", style="cyan")
             
             self.calculator.display_full_report(
                 period_days=period_days,
@@ -269,27 +267,31 @@ class AgriWaterCLI:
             )
             
             # Step 7: Ask for additional actions
-            self.post_calculation_menu(period_days, efficiency)
+            return self.post_calculation_menu(period_days, efficiency)
             
         except KeyboardInterrupt:
             print("\n\nOperation cancelled by user. Goodbye!")
-            sys.exit(0)
-        except Exception as e:
-            print(f"\nAn error occurred: {e}")
-            import traceback
-            traceback.print_exc()
-            sys.exit(1)
+            return False
+        
+        # except Exception as e:
+        #     print(f"\nAn error occurred: {e}")
+        #     import traceback
+        #     traceback.print_exc()
+        #     sys.exit(1)
     
     
 
-    def post_calculation_menu(self, period_days: int, efficiency: float) -> None:
+    def post_calculation_menu(self, period_days: int, efficiency: float) -> bool:
         """
         Displays a menu for additional actions after calculation.
         
         Args:
             - period_days (int): Analysis period
             - efficiency (float): Irrigation efficiency
+
+        Returns :  True if the user wants to run a new analysis, False otherwise
         """
+
         while True:
             self.console.print("\n[bold]====== Additional Actions ======\n[/bold]", style="bright_green")
             print("   1. Export results to CSV")
@@ -333,18 +335,26 @@ class AgriWaterCLI:
             
             elif choice == "4":
                 # New calculation
-                print("\nStarting new calculation...\n")
-                self.run()
-                break
+                return True
             
             elif choice == "5":
                 # Exit
                 print("\nThank you for using AgriWater! Goodbye!")
-                break
+                return False
             
             else:
                 print("Invalid choice. Please try again.")
 
+    
+    
+    def start(self):
+        """Main loop to avoid recursion"""
+       
+        self.print_header()
+        keep_running = True
+        while keep_running:
+            keep_running = self.run_calculation_flow()
+        print("\nThank you for using AgriWater!")
 
 
 # _________________MAIN ENTRY POINT _________________
@@ -352,7 +362,7 @@ class AgriWaterCLI:
 def main():
     """Main entry point for the application."""
     cli = AgriWaterCLI()
-    cli.run()
+    cli.start()
 
 
 if __name__ == "__main__":

@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 from agriwater.utils import coordinates_validation
 from agriwater.exceptions import ValidationError, WeatherAPIError
 
+# Strategies to deal with missing data
+ALLOWED_STRATEGIES = {"raise", "zero", "interpolate", "drop"}
+
 class MeteoAPI:
     """
     Class to interact with the Open-Meteo API and retrieve meteorological data.
@@ -23,6 +26,7 @@ class MeteoAPI:
         - latitude (float): Location latitude (-90 to 90)
         - longitude (float): Location longitude (-180 to 180)
     """
+    
 
     def __init__(self, latitude: float, longitude: float):
         # We use the Archive API for historical data
@@ -32,7 +36,8 @@ class MeteoAPI:
         coordinates_validation(latitude,longitude)
         self.latitude = latitude
         self.longitude = longitude
-            
+
+
 
     def _calculate_date_range(self, days_count: int) -> tuple[str, str]:
         """
@@ -48,12 +53,13 @@ class MeteoAPI:
 
         return start_date, end_date
 
+    
 
 
     def _parse_response_to_dataframe(self, data: dict, missing_data_strategy:str = "raise") -> pd.DataFrame:
         """
         Converts the API JSON response into a pandas DataFrame. 
-        Offers different strategys to deal with missing values
+        Offers different strategies to deal with missing values
         
         - Args: 
                 - data (dict): API JSON response
@@ -63,6 +69,12 @@ class MeteoAPI:
                 - WeatherAPIError : If there are missing weather data
                 - ValidationError: If the chosen strategy (for missing data) is not correct
         """
+        
+        if missing_data_strategy not in ALLOWED_STRATEGIES:
+            raise ValidationError(
+                f"Unknown missing_data_strategy: '{missing_data_strategy}'."
+                f"Allowed values: {sorted(ALLOWED_STRATEGIES)}")
+        
         try:
             # Extract daily data
             daily_data = data["daily"]
@@ -77,12 +89,8 @@ class MeteoAPI:
                 "precipitation": daily_data["precipitation_sum"]
             })
             
-            ALLOWED_STRATEGIES = {"raise", "zero", "interpolate", "drop"}
             
             if df_weather.isna().any().any():
-
-                if missing_data_strategy not in ALLOWED_STRATEGIES:
-                    raise ValidationError(f"Unknown missing_data_strategy: {missing_data_strategy}")
 
                 if missing_data_strategy == "raise":
                     raise WeatherAPIError(
@@ -94,7 +102,8 @@ class MeteoAPI:
 
                 elif missing_data_strategy == "interpolate":
                     df_weather = df_weather.interpolate(method="linear") 
-                    # Interpolate strategy is better for temperatures than for precipitations
+                    # Interpolation is more appropriate for temperature data than for precipitation
+
 
                 elif missing_data_strategy == "drop":
                     df_weather = df_weather.dropna()

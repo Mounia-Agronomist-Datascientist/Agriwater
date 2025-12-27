@@ -17,7 +17,7 @@ The project combines:
 
 
 ## Agronomic concepts used in this project
-- **Kc (crop coefficient)** represents the difference in the amount of water lost throught evapotranspiration between a specific non stressed crop and a hypothetical, well-watered grass reference. It changes according to the growing stage of the plant and is plant specific.  
+- **Kc (crop coefficient)** represents the difference in the amount of water lost through evapotranspiration between a specific non-stressed crop and a hypothetical, well-watered grass reference. It changes according to the growth stage of the plant and is plant specific.  
 
 ![alt text](docs/images/Kc_according_to_stages.png)
 
@@ -34,7 +34,7 @@ It integrates the characteristics of the crops (height, leaf area, canopy roughn
 
 ![alt text](docs/images/ETc.png)
 
-- **Reference Evapotranspiration ($ET_0$)**: This reprensents the amount of water lost from a hypothetical, standardized surface (a large field of short gree, actively growing and well-watered grass). There are several methods to calculate it, but the FAO standardized Penman-Monteith equation is the most accurate and widely accepted and is the one we are using in this project. Here is its equation : 
+- **Reference Evapotranspiration ($ET_0$)**: This represents the amount of water lost from a hypothetical, standardized surface (a large field of short green, actively growing and well-watered grass). There are several methods to calculate it, but the FAO standardized Penman-Monteith equation is the most accurate and widely accepted and is the one we are using in this project. Here is its equation : 
 
 $$ET_0 = \frac{0.408 \Delta (R_n - G) + \gamma \frac{900}{T + 273} u_2 (e_s - e_a)}{\Delta + \gamma (1 + 0.34 u_2)}$$
 
@@ -45,7 +45,7 @@ $$ET_0 = \frac{0.408 \Delta (R_n - G) + \gamma \frac{900}{T + 273} u_2 (e_s - e_
 * $u_2$ is the wind speed at 2m height.
 * $(e_s - e_a)$ represents the vapor pressure deficit.
 
-(Note : it exists a simplified alternative if needed : the Hargreaves equation that is less accurate but only needs temperatures).
+(Note : a simplified alternative exists if needed : the Hargreaves equation that is less accurate but only needs temperatures).
 
 - Reminder : (useful conversions used) 
     - 1 mm = 1 L/m²
@@ -104,16 +104,17 @@ python -m venv venv
     # Mac/Linux:
     source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install the project in editable mode with its dependencies
+pip install -e .
 
-# Verify installation
-python main.py --help
+# Now you can run it from anywhere!
+agriwater --help
+
 ```
 
 ### Quick Start
-Run the interactive interface
-`python main.py`
+Run the interactive interface (CLI-based interactive workflow)
+`agriwater`
 
 Follow the guided workflow:
 
@@ -127,14 +128,14 @@ Follow the guided workflow:
 
 Quick example (Python script)
 ```python
-from src.irrigation_calculator import IrrigationCalculator
+from agriwater.irrigation_calculator import IrrigationCalculator
 
 # Initialize calculator for corn in Montpellier
 calc = IrrigationCalculator(
     latitude=43.6109,
     longitude=3.8772,
-    crop_name="mais",
-    crop_stage="mi_saison",
+    crop_name="maize",
+    crop_stage="mid_season",
     surface_ha=10.0
 )
 
@@ -150,22 +151,22 @@ calc.create_visualizations(output_dir="output")
 ```python
 agriwater/
 │
+├── pyproject.toml                    # Configuration and dependancies
 ├── README.md                         # This file
-├── requirements.txt                  # Python dependencies
 ├── LICENSE                           # MIT License
-├── .gitignore                        # Git ignore rules
-├── main.py                           # CLI entry point
-│
-├── data/                             # Data files
-│   └── crops_parameters.json         # Crop parameters (Kc, stages)
-│
-├── src/                              # Source code
-│   ├── __init__.py
-│   ├── meteo_api.py                  # Weather data retrieval
-│   ├── evapotranspiration.py         # ET0/ETc calculations
-│   ├── irrigation_calculator.py      # Main orchestration
-│   ├── visualizations.py             # Plot generation
-│   └── utils.py                      # Utilities (CultureDatabase, conversions)
+├── .gitignore   
+│                      
+├── src/                             
+│   └── agriwater/                   
+│       ├── __init__.py
+│       ├── main.py                   # CLI entry point
+│       ├── meteo_api.py              # Weather data retrieval
+│       ├── evapotranspiration.py     # ET0/ETc calculations
+│       ├── irrigation_calculator.py  # Main orchestration
+│       ├── visualizations.py         # Plot generation
+│       ├── utils.py                  # Utilities (conversions)
+│       └── data/                     # Data inside the package
+│           └── crops_parameters.json # Crop parameters (Kc, stages)
 │
 ├── notebooks/                        # Jupyter notebooks (optional)
 │   └── demo_agriwater.ipynb          # Interactive demo
@@ -182,6 +183,15 @@ agriwater/
     └── *.csv                         # Exported results
 
 ```
+
+### Limitations and assumptions
+
+- ET₀ computed under standard FAO assumptions
+- No soil water holding capacity modeling
+- No dynamic rooting depth
+- Uniform field assumption
+- Kc values taken from FAO-56 tables (generic)
+
 
 ### License
 This project is licensed under the MIT License - see the LICENSE file for details.

@@ -11,7 +11,8 @@ This module retrieves:
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
-from src.agriwater.utils import coordinates_validation
+from agriwater.utils import coordinates_validation
+from agriwater.exceptions import ValidationError, WeatherAPIError
 
 class MeteoAPI:
     """
@@ -24,7 +25,7 @@ class MeteoAPI:
     """
 
     def __init__(self, latitude: float, longitude: float):
-      
+        # We use the Archive API for historical data
         self.base_url = "https://archive-api.open-meteo.com/v1/archive"
         
         # Coordinate validation
@@ -38,7 +39,7 @@ class MeteoAPI:
         Calculates the date range for the API request.
         
         - Args: days_count (int): Number of days to retrieve (counting back from today)
-        - Returns: Tuple[str, str]: (start_date, end_date) in ISO format (YYYY-MM-DD)
+        - Returns: tuple[str, str]: (start_date, end_date) in ISO format (YYYY-MM-DD)
         """
         
         today = datetime.today()
@@ -49,38 +50,68 @@ class MeteoAPI:
 
 
 
-    def _parse_response_to_dataframe(self, data: dict) -> pd.DataFrame:
+    def _parse_response_to_dataframe(self, data: dict, missing_data_strategy:str = "raise") -> pd.DataFrame:
         """
-        Converts the API JSON response into a pandas DataFrame.
+        Converts the API JSON response into a pandas DataFrame. 
+        Offers different strategys to deal with missing values
         
-        - Args: data (dict): API JSON response
+        - Args: 
+                - data (dict): API JSON response
+                - missing_data_strategy (str) : to try different options in case of missing data ("raise","zero","interpolate","drop")
         - Returns: pd.DataFrame: Structured DataFrame with weather data
+        - Raises : 
+                - WeatherAPIError : If there are missing weather data
+                - ValidationError: If the chosen strategy (for missing data) is not correct
         """
+        try:
+            # Extract daily data
+            daily_data = data["daily"]
+            
+            # Create DataFrame
+            df_weather = pd.DataFrame({
+                "date": pd.to_datetime(daily_data["time"]),
+                "temp_min": daily_data["temperature_2m_min"],
+                "temp_mean": daily_data["temperature_2m_mean"],
+                "temp_max": daily_data["temperature_2m_max"],
+                "et0_fao": daily_data["et0_fao_evapotranspiration"],
+                "precipitation": daily_data["precipitation_sum"]
+            })
+            
+            ALLOWED_STRATEGIES = {"raise", "zero", "interpolate", "drop"}
+            
+            if df_weather.isna().any().any():
 
-        # Extract daily data
-        daily_data = data["daily"]
+                if missing_data_strategy not in ALLOWED_STRATEGIES:
+                    raise ValidationError(f"Unknown missing_data_strategy: {missing_data_strategy}")
+
+                if missing_data_strategy == "raise":
+                    raise WeatherAPIError(
+                        "Missing meteorological data returned by the API."
+                    )
+
+                elif missing_data_strategy == "zero":
+                    df_weather = df_weather.fillna(0)
+
+                elif missing_data_strategy == "interpolate":
+                    df_weather = df_weather.interpolate(method="linear") 
+                    # Interpolate strategy is better for temperatures than for precipitations
+
+                elif missing_data_strategy == "drop":
+                    df_weather = df_weather.dropna()
+            
+            return df_weather
         
-        # Create DataFrame
-        df_weather = pd.DataFrame({
-            "date": pd.to_datetime(daily_data["time"]),
-            "temp_min": daily_data["temperature_2m_min"],
-            "temp_mean": daily_data["temperature_2m_mean"],
-            "temp_max": daily_data["temperature_2m_max"],
-            "et0_fao": daily_data["et0_fao_evapotranspiration"],
-            "precipitation": daily_data["precipitation_sum"]
-        })
-        
-        # Replace None values with 0 (assuming no rain/ET0 if data is missing)
-        df_weather = df_weather.fillna(0)
-        
-        return df_weather
+        except KeyError as e:
+            raise WeatherAPIError(f"Unexpected API response format. Missing key: {e}")
 
     
-    def fetch_weather_data(self, days_count: int = 10) -> pd.DataFrame|None:
+    def fetch_weather_data(self, days_count: int = 10, missing_data_strategy:str = "raise") -> pd.DataFrame:
         """
         Fetches weather data from the Open-Meteo API.
         
-        Args: - days_count (int): Number of days to retrieve (default 10)
+        Args: 
+            - days_count (int): Number of days to retrieve (default 10)
+            - missing_data_strategy (str) : to try different options in case of missing data ("raise","zero","interpolate","drop")
             
         Returns:
             pd.DataFrame: DataFrame with the following columns:
@@ -90,11 +121,16 @@ class MeteoAPI:
                 - temp_max: Maximum temperature (°C)
                 - et0_fao: FAO Reference Evapotranspiration (mm/day)
                 - precipitation: Precipitation (mm)
-                - None: If an error occurs
             
         Raises:
-            requests.exceptions.RequestException: If the API request fails
+            - Validation error: If the day_counts is not correct
+            - WeatherAPIError: If the API request fails   
+
         """
+        
+        if not isinstance(days_count, int) or days_count <= 0:
+            raise ValidationError("days_count must be a positive integer")
+
         # Calculate dates
         start_date, end_date = self._calculate_date_range(days_count)
         
@@ -117,29 +153,24 @@ class MeteoAPI:
             data = response.json()
             
             # Create DataFrame
-            df_weather_data = self._parse_response_to_dataframe(data)
-            
-            print(f"\nWeather data successfully retrieved for {days_count} days")
-            print(f"Period: \n- Beginning : {start_date},\n- End : {end_date}")
+            df_weather_data = self._parse_response_to_dataframe(data, missing_data_strategy=missing_data_strategy)
             
             return df_weather_data
             
-        except requests.exceptions.Timeout:
-            print("Error: API request timeout. Please check your internet connection.")
-            return None
+        except requests.exceptions.Timeout as e:
+            raise WeatherAPIError("The weather service timed out. Please check your internet connection.")
+        
         except requests.exceptions.HTTPError as e:
-            print(f"HTTP Error: {e}")
-            print(f"Status Code: {response.status_code}")
-            return None
+            raise WeatherAPIError(f"Weather service returned an error ({response.status_code}): {e}")
+        
         except requests.exceptions.RequestException as e:
-            print(f"Error during weather data retrieval: {e}")
-            return None
+            raise WeatherAPIError(f"Failed to retrieve weather data for ({self.latitude}, {self.longitude}): {e}")
+        
         except KeyError as e:
-            print(f"Error: Missing data in API response: {e}")
-            return None
+            raise WeatherAPIError(f"Network error while fetching weather data: {e}")
 
 
-    def get_location_info(self) -> dict[str,int|float]:
+    def get_location_info(self) -> dict[str,float]:
         """
         Returns location information.
         
@@ -150,34 +181,3 @@ class MeteoAPI:
             "latitude": self.latitude,
             "longitude": self.longitude
         }
-
-
-
-# __________ Example usage for testing (Location : Montpellier) __________ 
-
-if __name__ == "__main__":
-    # Test with Montpellier
-    
-    print("\n----- Testing MeteoAPI module with Montpellier coordinates -----\n")
-    
-    try:
-        # Initialization
-        meteo = MeteoAPI(latitude=43.6109, longitude=3.8772)
-        
-        # Display location info
-        print(f"Location: {meteo.get_location_info()}\n")
-        
-        # Fetch 7-day weather data
-        df_meteo = meteo.fetch_weather_data(days_count=7)
-        
-        if df_meteo is not None:
-            print("\nData Overview:")
-            print(df_meteo.to_string(index=False))
-            
-            print("\nStatistics:")
-            print(f"   - Average ET0: {df_meteo['et0_fao'].mean():.2f} mm/day")
-            print(f"   - Total Precipitation: {df_meteo['precipitation'].sum():.2f} mm")
-            print(f"   - Mean Temperature: {df_meteo['temp_mean'].mean():.2f} °C")
-            
-    except ValueError as e:
-        print(f"Validation Error: {e}")

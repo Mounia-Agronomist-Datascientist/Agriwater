@@ -11,6 +11,8 @@ Author: Mounia Tonazzini
 Date: December 2025
 """
 
+from agriwater.exceptions import ValidationError
+
 def format_number(value: float, decimals: int = 2) -> str:
     """
     Formats a number with a specified number of decimal and returns it as a string.
@@ -24,18 +26,20 @@ def format_number(value: float, decimals: int = 2) -> str:
     return f"{value:.{decimals}f}"
 
 
-def validate_area(area_ha: float) -> bool:
+def validate_area(area_ha: float) -> None:
     """
     Validates that a surface area in hectares is positive.
     
     Args: area_ha (float): Surface area in hectares.
         
-    Returns: bool: True if valid, False otherwise.
+    Returns: ValidationError if area is not positive.
     """
+    
+    if not isinstance(area_ha, (int, float)):
+        raise ValidationError(f"Area must be a number, got {type(area_ha).__name__}")
+    
     if area_ha <= 0:
-        print(f"Error: Surface area must be positive (provided: {area_ha} ha)")
-        return False
-    return True
+        raise ValidationError(f"Surface area must be positive (provided: {area_ha} ha)")
 
 
 
@@ -61,85 +65,71 @@ def convert_m3_to_mm(m3: float, surface_ha: float) -> float:
         - surface_ha (float): Surface area in hectares
     
     Returns:float: Water depth in mm
-    Raises: ValueError if surface_ha is not positive
+    Raises: ValidationError if surface_ha is not positive
     """
     if surface_ha <= 0:
-        raise ValueError("Surface area must be positive")
+        raise ValidationError(f"Surface area must be positive to calculate depth (provided: {surface_ha})")
     
     return m3 / (10 * surface_ha)  # m³ / (10 * ha) = mm
 
 
 def coordinates_validation(latitude:int|float,longitude:int|float) -> None:
     """
-    Checks if GPS coordinates are valid.
+    Validates if GPS coordinates are valid.
     
     Args : 
         - latitude (float) : latitude in degrees, must be between -90 and 90
         - longitude (float) : longitude in degrees, must be between -180 and 180
 
     Raises : 
-        - TypeError if the coordinates are not float numbers
-        - ValueError if the coordinates are not in a valid range
+        ValidationError: if the coordinates are not numbers or are out of range
     """
     errors = []
 
-    # Type checks
+    # Type validation
     if not isinstance(latitude, (int, float)):
         errors.append(f"Latitude must be a number, got {type(latitude).__name__}")
     if not isinstance(longitude, (int, float)):
         errors.append(f"Longitude must be a number, got {type(longitude).__name__}")
 
-    # Value checks (only if types are correct)
-    if isinstance(latitude, (int, float)) and not (-90 <= latitude <= 90):
-        errors.append(f"Latitude {latitude} out of range [-90, 90]")
-    if isinstance(longitude, (int, float)) and not (-180 <= longitude <= 180):
-        errors.append(f"Longitude {longitude} out of range [-180, 180]")
-
+    # Value validation (only if types are correct)
+    if not errors:
+        if not (-90 <= latitude <= 90):
+            errors.append(f"Latitude {latitude} is out of range [-90, 90]")
+        if not (-180 <= longitude <= 180):
+            errors.append(f"Longitude {longitude} is out of range [-180, 180]")
+    
     if errors:
-        # Combine all errors into one exception
-        raise ValueError("; ".join(errors))
+        # Combine all errors into one custom exception
+        raise ValidationError(" | ".join(errors))
 
 
 
 # __________ Example usage for testing __________ 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+#     print("\n--- Testing utility functions ---")
     
-    print("\n--- Testing utility functions ---")
-    
-    # Test number formatting
-    print("\n- Number formatting tests:")
-    print(f"Pi (2 decimals): {format_number(3.14159, 2)}")
-    print(f"Pi (4 decimals): {format_number(3.14159, 4)}")
-    
-    # Test surface validation
-    print("\n- Surface validation tests:")
-    print(f"10 ha is valid: {validate_area(10)}")
-    print(f"-5 ha is valid: {validate_area(-5)}")
+#     # Test surface validation
+#     print("\n- Surface validation tests:")
+#     try:
+#         validate_area(10)
+#         print("10 ha: Valid")
+#         validate_area(-5)
+#     except ValidationError as e:
+#         print(f"-5 ha: Invalid -> {e}")
 
-    # Test conversions
-    print("\n- Conversion tests:")
-    print(f"10 mm = {convert_mm_to_m3_per_ha(10)} m³/ha")
-    print(f"100 m³ on 5 ha = {convert_m3_to_mm(100, 5)} mm")
-
-    # Test coordinate validation
-    print("\n- Coordinates validation tests:")
-    test_coords = [
-        (43.6109, 3.8772), # Montpellier
-        (48.8566, 2.3522), # Paris
-        (95.0, 3.8772), # Invalid latitude
-        (43.6109, 200.0), # Invalid longitude
-        ("45", "10"), # Invalid  coordinates
-        (45, "ab") # Invalid longitude type
-    ]
+#     # Test coordinate validation
+#     print("\n- Coordinates validation tests:")
+#     test_coords = [
+#         (43.6109, 3.8772), 
+#         (95.0, 3.8772),   
+#         ("45", "10"),     
+#     ]
     
-    for lat, lon in test_coords:
-        try:
-            coordinates_validation(lat, lon)
-            print("Coordinates are valid")
-        except (ValueError, TypeError) as e:
-            print(f"Coordinates are invalid: {e}")
-    
-    
-
-    
+#     for lat, lon in test_coords:
+#         try:
+#             coordinates_validation(lat, lon)
+#             print(f"({lat}, {lon}): Valid")
+#         except ValidationError as e:
+#             print(f"({lat}, {lon}): Invalid -> {e}")

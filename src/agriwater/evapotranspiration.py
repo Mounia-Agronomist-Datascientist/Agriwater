@@ -11,10 +11,7 @@ Date: December 2025
 """
 
 import pandas as pd
-
-
 from agriwater.exceptions import ValidationError, CalculationError
-
 
 
 class EvapotranspirationCalculator:
@@ -71,7 +68,8 @@ class EvapotranspirationCalculator:
         
         Formula: ETc = ET0 x Kc
         
-        Returns: pd.DataFrame: DataFrame with added 'etc' column (mm/day)
+        Returns: 
+            pd.DataFrame: DataFrame with added 'etc' column (mm/day)
         """
 
         self.weather_data['etc'] = self.weather_data['et0_fao'] * self.crop_kc
@@ -83,9 +81,11 @@ class EvapotranspirationCalculator:
         """
         Calculates cumulative precipitation over the last "period_days" days.
         
-        Args: period_days (int): Number of days to consider (default: 7)
+        Args: 
+            period_days (int): Number of days to consider (default: 7)
             
-        Returns: float: Total precipitation in mm over the period
+        Returns: 
+            float: Total precipitation in mm over the period
         """
         if period_days <= 0:
             raise ValidationError("period_days must be a positive integer.")
@@ -103,10 +103,12 @@ class EvapotranspirationCalculator:
         """
         Calculates average daily ETc over a period.
         
-        Args: period_days (int, optional): Number of days to consider. 
-        If None, uses all available data.
+        Args: 
+            period_days (int, optional): Number of days to consider. 
+            If None, uses all available data.
         
-        Returns: float: Average daily ETc in mm/day
+        Returns: 
+            float: Average daily ETc in mm/day
         """
         
         if period_days is not None and period_days <= 0:
@@ -127,21 +129,22 @@ class EvapotranspirationCalculator:
     
     def calculate_irrigation_need(self, period_days: int = 7, efficiency: float = 0.85) -> dict[str, float]:
         """
-        Calculate net irrigation needs based on ETc and precipitation.
+        Calculates net irrigation needs based on ETc and precipitation.
         
         Args:
             - period_days (int): Number of days to consider for precipitation (default: 7)
             - efficiency (float): Irrigation efficiency (default: 0.85 = 85%)
         
         Returns:
-            Dict[str, float]: Dictionary containing:
+            dict[str, float]: Dictionary containing:
                 - 'avg_etc_mm_day': Average daily ETc (mm/day)
                 - 'total_etc_mm': Total ETc over period (mm)
                 - 'total_precipitation_mm': Total precipitation over period (mm)
                 - 'net_irrigation_need_mm': Net irrigation need (mm)
                 - 'gross_irrigation_need_mm': Gross irrigation need accounting for efficiency (mm)
         
-        Raises: ValidationError: If the irrigation efficiency is not between 0 and 1.
+        Raises: 
+            ValidationError: If the irrigation efficiency is not between 0 and 1.
         """
 
         if period_days <= 0:
@@ -191,14 +194,14 @@ class EvapotranspirationCalculator:
             - efficiency (float): Irrigation efficiency (default: 0.85).
         
         Returns:
-            Dict[str, float]: Dictionary containing:
+            dict[str, float]: Dictionary containing:
                 - All values from calculate_irrigation_need(),
                 - 'surface_ha': Surface area (ha),
                 - 'net_volume_m3': Net irrigation volume (m³),
                 - 'gross_volume_m3': Gross irrigation volume (m³).
         
         Raises : 
-                - ValidationError: If the surface is not positive.
+            - ValidationError: If the surface is not positive.
         """
         
         if surface_ha <= 0:

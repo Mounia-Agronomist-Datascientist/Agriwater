@@ -18,9 +18,10 @@ from agriwater.meteo_api import MeteoAPI
 from agriwater.utils import coordinates_validation, validate_area
 from agriwater.evapotranspiration import EvapotranspirationCalculator
 from agriwater.crop_database import CropDatabase
-from agriwater.exceptions import WeatherAPIError
+from agriwater.exceptions import WeatherAPIError, ValidationError
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
+logger=logging.getLogger(__name__)
+ALLOWED_STRATEGIES = {"raise", "zero", "interpolate", "drop"}
 
 class IrrigationCalculator:
     """
@@ -66,7 +67,7 @@ class IrrigationCalculator:
          
             
         Raises:
-            - ValidationError: If crop or stage is invalid
+            - ValidationError: If crop, stage, coordinates or area are invalid
             - CropDataError: If crop data is missing
         """
 
@@ -74,8 +75,14 @@ class IrrigationCalculator:
         coordinates_validation(latitude,longitude)
         self.latitude = latitude
         self.longitude = longitude
+        
         validate_area(surface_ha)
         self.surface_ha = surface_ha
+        
+        if missing_data_strategy not in ALLOWED_STRATEGIES:
+            raise ValidationError(
+                f"Unknown missing_data_strategy: '{missing_data_strategy}'."
+                f"Allowed values: {sorted(ALLOWED_STRATEGIES)}")
         self.missing_data_strategy = missing_data_strategy
         
         # Initialize crop database and validate crop and stage
@@ -92,7 +99,6 @@ class IrrigationCalculator:
         self.meteo_api = MeteoAPI(latitude=latitude, longitude=longitude)
         self.weather_data = None  # Fetched when needed
         
-        logger=logging.getLogger(__name__)
         logger.info(f"\nIrrigation calculator initialized")
         logger.info(f"- Location: ({latitude:.4f}, {longitude:.4f})")
         logger.info(f"- Crop: {self.crop_info['full_name']} ({self.crop_name})")
@@ -107,11 +113,13 @@ class IrrigationCalculator:
         """
         Fetches weather data from the API using the strategy defined at initialization.
         
-        Args: nb_days (int): Number of days of historical data to fetch (default: 7)
+        Args: 
+            nb_days (int): Number of days of historical data to fetch (default: 7)
             
-        Returns: pd.DataFrame: Weather data
+        Returns: 
+            pd.DataFrame: Weather data
         """
-        logger = logging.getLogger(__name__)
+    
         logger.info(f"Fetching weather data for the last {nb_days} days")
         try:
             self.weather_data = self.meteo_api.fetch_weather_data(
@@ -120,7 +128,9 @@ class IrrigationCalculator:
                 )
             return self.weather_data
         except WeatherAPIError as e:
-            raise WeatherAPIError("IrrigationCalculator failed to fetch weather data"
+            raise WeatherAPIError(
+                f"IrrigationCalculator failed to fetch weather data "
+                f"(strategy={self.missing_data_strategy})"
             ) from e
     
 
@@ -133,16 +143,17 @@ class IrrigationCalculator:
             If None, uses recommended period for the crop.
             - efficiency (float): Irrigation efficiency (default: 0.85 = 85%)
             
-        Returns: dict[str, float]: Dictionary with irrigation needs and water balance
+        Returns: 
+            dict[str, float]: Dictionary with irrigation needs and water balance
         """
-        logger = logging.getLogger(__name__)
-        period_days = int(period_days)
         
         # Use the maximum recommended period for the crop if not specified
         if period_days is None:
             period_days = max(self.crop_info["irrigation_interval"])
             logger.info(f"Using recommended irrigation period: {period_days} days")
-
+        else : 
+            period_days = int(period_days)
+        
         # Fetch weather data if not already done
         if self.weather_data is None or len(self.weather_data) < period_days:
             self.fetch_weather_data(nb_days=period_days)
@@ -169,7 +180,8 @@ class IrrigationCalculator:
         """
         Get a summary of the weather data with ETc calculated.
         
-        Returns: pd.DataFrame: Weather data with an added ETc column
+        Returns: 
+            pd.DataFrame: Weather data with an added ETc column
         """
 
         if self.weather_data is None:
@@ -203,7 +215,9 @@ class IrrigationCalculator:
             - filename (str): Output filename (default: 'irrigation_results.csv')
             - period_days (int, optional): Number of days to consider
             - efficiency (float): Irrigation efficiency
-        Returns: Tuple with the path of the saved csv file and the results as a DataFrame.
+        
+        Returns: 
+            Tuple with the path of the saved csv file and the results as a DataFrame.
         """
         
         # Project root relative to this file

@@ -9,25 +9,26 @@ This module combines:
 Author: Mounia Tonazzini
 Date: December 2025
 """
-import sys
-import os
+
 import pandas as pd
+from pathlib import Path
+import logging
 
-# Add parent directory to path to allow imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from agriwater.meteo_api import MeteoAPI
+from agriwater.utils import coordinates_validation, validate_area
+from agriwater.evapotranspiration import EvapotranspirationCalculator
+from agriwater.crop_database import CropDatabase
+from agriwater.exceptions import WeatherAPIError
 
-from src.agriwater.meteo_api import MeteoAPI
-from src.agriwater.utils import coordinates_validation, validate_area
-from src.agriwater.evapotranspiration import EvapotranspirationCalculator
-from src.agriwater.crop_database import CropDatabase
-
+logging.basicConfig(level=logging.INFO, format='%(levelname)s:%(name)s:%(message)s')
 
 class IrrigationCalculator:
     """
     Main class that orchestrates irrigation needs calculation.
     
     This class combines weather data, crop parameters, and evapotranspiration
-    calculations to provide irrigation recommendations.
+    calculations to provide irrigation recommendations. 
+    (We assume homogeneous crop surface and uniform irrigation efficiency.)
     
     Attributes:
         - latitude (float): Latitude of the location
@@ -35,6 +36,7 @@ class IrrigationCalculator:
         - crop_name (str): Name of the crop
         - crop_stage (str): Phenological stage of the crop
         - surface_ha (float): Surface area in hectares
+        - missing_data_strategy (str): Strategy to deal with NaN
         - crop_db (CropDatabase): Crop parameters database
         - crop_info (dict): Crop information and parameters
         - crop_kc (float): Crop coefficient for the selected stage
@@ -49,10 +51,11 @@ class IrrigationCalculator:
         longitude: float,
         crop_name: str,
         crop_stage: str = "mid_season",
-        surface_ha: float = 1.0
+        surface_ha: float = 1.0,
+        missing_data_strategy: str = "raise"
     ):
         """
-        Initialize the irrigation calculator.
+        Initializes the irrigation calculator.
         
         Args:
             - latitude (float): Latitude of the location
@@ -62,23 +65,24 @@ class IrrigationCalculator:
             - surface_ha (float): Surface area in hectares (default: 1.0)
          
             
-        Raises:ValueError: If crop or stage is invalid
+        Raises:
+            - ValidationError: If crop or stage is invalid
+            - CropDataError: If crop data is missing
         """
 
-        # Validate coordinates
+        # Validations
         coordinates_validation(latitude,longitude)
         self.latitude = latitude
         self.longitude = longitude
+        validate_area(surface_ha)
+        self.surface_ha = surface_ha
+        self.missing_data_strategy = missing_data_strategy
         
         # Initialize crop database and validate crop and stage
         self.crop_db = CropDatabase()
         self.crop_db.validate_crop_and_stage(crop_name,crop_stage)
         self.crop_name = crop_name.lower()
         self.crop_stage = crop_stage.lower()
-
-        # Validate area
-        validate_area(surface_ha)
-        self.surface_ha = surface_ha
         
         # Load crop information
         self.crop_info = self.crop_db.get_crop_info(self.crop_name)
@@ -86,39 +90,43 @@ class IrrigationCalculator:
         
         # Initialize weather API
         self.meteo_api = MeteoAPI(latitude=latitude, longitude=longitude)
-
-        # Weather data (fetched when needed)
-        self.weather_data = None
+        self.weather_data = None  # Fetched when needed
         
-        print(f"\nIrrigation calculator initialized")
-        print(f"- Location: ({latitude:.4f}, {longitude:.4f})")
-        print(f"- Crop: {self.crop_info["full_name"]} ({self.crop_name})")
-        print(f"- Stage: {self.crop_stage.replace('_', ' ').title()}")
-        print(f"- Kc: {self.crop_kc:.2f}")
-        print(f"- Surface: {self.surface_ha:.2f} ha\n")
+        logger=logging.getLogger(__name__)
+        logger.info(f"\nIrrigation calculator initialized")
+        logger.info(f"- Location: ({latitude:.4f}, {longitude:.4f})")
+        logger.info(f"- Crop: {self.crop_info['full_name']} ({self.crop_name})")
+        logger.info(f"- Stage: {self.crop_stage.replace('_', ' ').title()}")
+        logger.info(f"- Kc: {self.crop_kc:.2f}")
+        logger.info(f"- Surface: {self.surface_ha:.2f} ha\n")
+        logger.info(f"Missing data strategy : {missing_data_strategy}")
     
+
     
     def fetch_weather_data(self, nb_days: int = 7) -> pd.DataFrame:
         """
-        Fetch weather data from the API.
+        Fetches weather data from the API using the strategy defined at initialization.
         
-        Args:nb_days (int): Number of days of historical data to fetch (default: 7)
+        Args: nb_days (int): Number of days of historical data to fetch (default: 7)
             
-        Returns:pd.DataFrame: Weather data
+        Returns: pd.DataFrame: Weather data
         """
+        logger = logging.getLogger(__name__)
+        logger.info(f"Fetching weather data for the last {nb_days} days")
+        try:
+            self.weather_data = self.meteo_api.fetch_weather_data(
+                days_count = nb_days,
+                missing_data_strategy = self.missing_data_strategy
+                )
+            return self.weather_data
+        except WeatherAPIError as e:
+            raise WeatherAPIError("IrrigationCalculator failed to fetch weather data"
+            ) from e
+    
 
-        print(f"Fetching weather data for the last {nb_days} days")
-        self.weather_data = self.meteo_api.fetch_weather_data(days_count=nb_days)
-        
-        if self.weather_data is None:
-            raise RuntimeError("Failed to fetch weather data. Check your internet connection.")
-        
-        return self.weather_data
-    
-    
     def calculate_irrigation_needs(self,period_days: int|None = None, efficiency: float = 0.85) -> dict[str, float]:
         """
-        Calculate irrigation needs based on weather data and crop parameters.
+        Calculates irrigation needs based on weather data and crop parameters.
         
         Args:
             - period_days (int, optional): Number of days to consider for calculations.
@@ -127,17 +135,17 @@ class IrrigationCalculator:
             
         Returns: dict[str, float]: Dictionary with irrigation needs and water balance
         """
+        logger = logging.getLogger(__name__)
+        period_days = int(period_days)
+        
+        # Use the maximum recommended period for the crop if not specified
+        if period_days is None:
+            period_days = max(self.crop_info["irrigation_interval"])
+            logger.info(f"Using recommended irrigation period: {period_days} days")
 
         # Fetch weather data if not already done
-        if self.weather_data is None:
-            nb_days = period_days if period_days else max(self.crop_info["irrigation_interval"])
-            self.fetch_weather_data(nb_days=nb_days)
-        
-        # Use recommended period if not specified
-        if period_days is None:
-            # Use the maximum recommended period for the crop
-            period_days = max(self.crop_info["irrigation_interval"])
-            print(f"Using recommended irrigation period: {period_days} days")
+        if self.weather_data is None or len(self.weather_data) < period_days:
+            self.fetch_weather_data(nb_days=period_days)
         
         # Create evapotranspiration calculator
         et_calculator = EvapotranspirationCalculator(
@@ -156,55 +164,12 @@ class IrrigationCalculator:
         return results
     
     
-    def display_full_report(
-        self,
-        period_days: int|None = None,
-        efficiency: float = 0.85
-    ) -> None:
-        """
-        Display a complete irrigation report with recommendations.
-        
-        Args:
-            - period_days (int, optional): Number of days to consider for calculations
-            - efficiency (float): Irrigation efficiency (default: 0.85)
-        """
-        
-        # Fetch weather data if not already done
-        if self.weather_data is None:
-            nb_days = period_days if period_days else max(self.crop_info["irrigation_interval"])
-            self.fetch_weather_data(nb_days=nb_days)
-        
-        # Use recommended period if not specified
-        if period_days is None:
-            period_days = max(self.crop_info["irrigation_interval"])
-        
-        # Create evapotranspiration calculator
-        et_calculator = EvapotranspirationCalculator(
-            weather_data=self.weather_data,
-            crop_kc=self.crop_kc,
-            crop_name=self.crop_info["full_name"]
-        )
-        
-        # Display summary
-        et_calculator.display_irrigation_summary(
-            surface_ha=self.surface_ha,
-            period_days=period_days,
-            efficiency=efficiency
-        )
     
-    
-    def get_crop_summary(self) -> None:
-        """
-        Display a summary of the selected crop parameters.
-        """
-        self.crop_db.display_crop_summary(self.crop_name)
-    
-
     def get_weather_summary(self) -> pd.DataFrame:
         """
         Get a summary of the weather data with ETc calculated.
         
-        Returns:pd.DataFrame: Weather data with ETc column
+        Returns: pd.DataFrame: Weather data with an added ETc column
         """
 
         if self.weather_data is None:
@@ -223,27 +188,37 @@ class IrrigationCalculator:
         return weather_with_etc
     
     
+    
     def export_results_to_csv(
         self,
         filename: str = "irrigation_results.csv",
         period_days: int|None = None,
         efficiency: float = 0.85
-    ) -> None:
+    )-> tuple[Path, pd.DataFrame]:
+        
         """
-        s calculation results to a CSV file.
+        Exports calculation results to a CSV file into the output folder using Pathlib.
         
         Args:
             - filename (str): Output filename (default: 'irrigation_results.csv')
             - period_days (int, optional): Number of days to consider
             - efficiency (float): Irrigation efficiency
+        Returns: Tuple with the path of the saved csv file and the results as a DataFrame.
         """
+        
+        # Project root relative to this file
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        output_dir = root_dir / "output"
+        output_dir.mkdir(parents=True, exist_ok=True) # Create the output folder if it doesn't exist
+        file_path = output_dir / filename # Full file path
+
         # Calculate results
         results = self.calculate_irrigation_needs(period_days, efficiency)
         
         # Create DataFrame
         results_df = pd.DataFrame([results])
         
-        # Add metadata
+        # Add metadata for the record
         results_df['crop'] = self.crop_info['full_name']
         results_df['crop_stage'] = self.crop_stage
         results_df['kc'] = self.crop_kc
@@ -258,65 +233,8 @@ class IrrigationCalculator:
         results_df = results_df[cols]
         
         # Export to CSV
-        results_df.to_csv(filename, index=False)
-        print(f"\nResults exported to {filename}")
+        results_df.to_csv(file_path, index=False)
 
-        return results_df
+        return file_path,results_df
     
     
-
-
-
-
-
-# __________ Example usage for testing __________ 
-
-if __name__ == "__main__":
-
-    try:
-        # Example 1: Grapevine in Montpellier
-        print("\n" + "="*70)
-        print("EXAMPLE 1: Grapevine field in Montpellier (mid-season)")
-        print("="*70)
-        
-        calc_grapevine = IrrigationCalculator(
-            latitude=43.6109,
-            longitude=3.8772,
-            crop_name="GRAPEVINE",
-            crop_stage="mid_season",
-            surface_ha=15.0
-        )
-        
-        # Display crop summary
-        calc_grapevine.get_crop_summary()
-        
-        # Display full irrigation report
-        calc_grapevine.display_full_report(period_days=7, efficiency=0.85)
-        
-        # Export results
-        calc_grapevine.export_results_to_csv("example_grapevine_results.csv")
-        
-        # Display weather data with ETc
-        print("\nWeather data with ETc:")
-        weather_summary = calc_grapevine.get_weather_summary()
-        print(weather_summary[['date', 'temp_mean', 'et0_fao', 'precipitation', 'etc']].to_string(index=False))
-
-
-        # Example 2: Test with invalid crop (error handling)
-        print("\n\n" + "="*70)
-        
-        try:
-            calc_invalid = IrrigationCalculator(
-                latitude=43.6109,
-                longitude=3.8772,
-                crop_name="banane",  # Invalid crop
-                crop_stage="mid_season"
-            )
-        except ValueError as e:
-            print(f"Error correctly caught: {e}")
-        
-        
-    except Exception as e:
-        print(f"\nError during testing: {e}")
-        import traceback
-        traceback.print_exc()

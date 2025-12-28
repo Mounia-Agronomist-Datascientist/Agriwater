@@ -21,7 +21,7 @@ class CropDatabase:
     
     def __init__(self):
         """
-        Initialize the crop database.
+        Initializes the crop database.
         """
         
         self.data = self._load_json()
@@ -30,11 +30,11 @@ class CropDatabase:
 
     def _load_json(self) -> dict[str, Any]:
         """
-        Load the crop parameters JSON file.
+        Loads the crop parameters JSON file.
         
-        Return: dict: Data from the JSON file.
+        Returns: dict: Data from the JSON file.
             
-        Raise:
+        Raises:
             - FileNotFoundError: If the JSON file does not exist.
             - json.JSONDecodeError: If the JSON is poorly formatted.
         """
@@ -61,9 +61,9 @@ class CropDatabase:
 
     def get_available_crops(self) -> list[str]:
         """
-        Return the list of available crops.
+        Returns the list of available crops.
         
-        Return: List[str]: List of crop names 
+        Returns: List[str]: List of crop names 
         """
 
         return list(self.data["crops"].keys())
@@ -72,13 +72,13 @@ class CropDatabase:
     
     def validate_crop_and_stage(self,crop_name: str, crop_stage: str) -> None:
         """
-        Validate that the crop and stage exist in the database.
+        Validates that the crop and stage exist in the database.
         
         Args:
             - crop_name (str): Crop name to validate
             - crop_stage (str): Growth stage to validate
 
-        Raise: ValidationError: If crop or stage is invalid
+        Raises: ValidationError: If crop or stage is invalid
         """
         
         # Validate if crop exists
@@ -104,11 +104,11 @@ class CropDatabase:
         
     def crop_exists(self, crop_name: str) -> bool:
         """
-        Check if a crop exists in the database.
+        Checks if a crop exists in the database.
         
         Args: crop_name (str): Crop name to check
             
-        Return: bool: True if crop exists, False otherwise
+        Returns: bool: True if crop exists, False otherwise
         """
         
         return crop_name.lower() in self.get_available_crops()
@@ -116,16 +116,16 @@ class CropDatabase:
     
     def stage_exists(self, crop_name: str, crop_stage: str) -> bool:
         """
-        Check if a growth stage exists for a given crop.
+        Checks if a growth stage exists for a given crop.
         
         Args:
             - crop_name (str): Crop name
             - crop_stage (str): Growth stage to check
             
-        Return:
+        Returns:
             - bool: True if stage exists for this crop, False otherwise
 
-        Raise : CropDataError: if the crop is missing
+        Raises: CropDataError: if the crop is missing
         """
         crop_info = self.get_crop_info(crop_name)
         
@@ -135,13 +135,13 @@ class CropDatabase:
 
     def get_crop_info(self, crop_name: str)-> dict[str, Any]:
         """
-        Return all information for a specific crop.
+        Returns all information for a specific crop.
         
         Args: crop_name (str): Name of the crop (e.g., 'maize')
             
-        Return: dict: Dictionary containing all crop parameters.
+        Returns: dict: Dictionary containing all crop parameters.
 
-        Raise : CropDataError: if the crop is missing
+        Raises : CropDataError: if the crop is missing
         """
         
         crop_name_lower = crop_name.lower()
@@ -155,15 +155,15 @@ class CropDatabase:
 
     def get_kc_for_stage(self, crop_name: str, crop_stage: str) -> float :
         """
-        Return the Kc coefficient for a given phenological stage.
+        Returns the Kc coefficient for a given phenological stage.
         
         Args:
             - crop_name (str): Name of the crop (e.g., 'maize')
             - crop_stage (str): Phenological stage ('initial', 'development', 'mid_season', 'late_season')
             
-        Return: float: Kc value.
+        Returns: float: Kc value.
 
-        Raise : CropDataError: if the stage is missing
+        Raises: CropDataError: if the stage is missing
         """
         
         crop_info = self.get_crop_info(crop_name)
@@ -177,15 +177,15 @@ class CropDatabase:
 
     def get_irrigation_interval(self, crop_name: str) -> list[int]:
         """
-        Return the recommended irrigation interval for a crop.
+        Returns the recommended irrigation interval for a crop.
         
         Args: crop_name (str): Name of the crop.
             
-        Return:
+        Returns:
             - List[int]: Recommended intervals in days (e.g., [5, 7] means that the minimum 
             number of days between two waterings is 5 and the maximum is 7).
         
-        Raise : CropDataError: if the crop is missing
+        Raises: CropDataError: if the crop is missing
             
         """
         
@@ -195,11 +195,11 @@ class CropDatabase:
 
     def get_crop_summary(self, crop_name: str) -> dict[str, Any]:
         """
-        Return a structured summary of a crop's parameters.
+        Returns a structured summary of a crop's parameters.
         
         Args: crop_name (str): Name of the crop.
 
-        Raise : CropDataError: if the crop is missing
+        Raises: CropDataError: if the crop is missing
         """
         crop_info = self.get_crop_info(crop_name)
 

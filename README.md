@@ -78,6 +78,18 @@ The engine follows the **FAO Irrigation and Drainage Paper No. 56** standards.
 
 For more information, see : docs/methodology.md
 
+
+## Missing data
+
+Missing meteorological data is handled at the data ingestion layer (meteo_api.py) via configurable strategies.
+By default, the model raises an error if missing meteorological data is detected.
+For pedagogical and exploratory purposes, alternative strategies can be explicitly enabled:
+- "raise" → raises an error
+- "zero" → fills NA with 0
+- "interpolate" → interpolates the missing data
+- "drop" → deletes the missing data
+
+
 **Net Irrigation Requirement** : 
 The final recommendation considers the effective rainfall ($P_{eff}$) to avoid over-irrigation:
 

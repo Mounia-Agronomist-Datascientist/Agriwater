@@ -131,7 +131,7 @@
         }
       },
       "total_cycle_days": 160,
-      "irrigation_interval": [7],
+      "irrigation_interval": [6,7],
       "water_stress_sensitivity": "low to medium"
     }
   },

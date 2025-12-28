@@ -29,7 +29,7 @@ class IrrigationCalculator:
     
     This class combines weather data, crop parameters, and evapotranspiration
     calculations to provide irrigation recommendations. 
-    (We assume homogeneous crop surface and uniform irrigation efficiency.)
+    (We assume a homogeneous crop surface and uniform irrigation efficiency.)
     
     Attributes:
         - latitude (float): Latitude of the location
@@ -175,7 +175,6 @@ class IrrigationCalculator:
         return results
     
     
-    
     def get_weather_summary(self) -> pd.DataFrame:
         """
         Get a summary of the weather data with ETc calculated.
@@ -198,8 +197,42 @@ class IrrigationCalculator:
         weather_with_etc = et_calculator.calculate_etc()
         
         return weather_with_etc
-    
-    
+
+
+    def generate_agronomic_summary(self,period_days: int, efficiency: float) -> dict:
+        """
+        Generates a clear agronomic irrigation decision summary.
+
+        Returns:
+            dict: Agronomic indicators and irrigation recommendation.
+        """
+
+        results = self.calculate_irrigation_needs(period_days, efficiency)
+
+        total_precip_mm = results["total_precipitation_mm"]
+        total_etc_mm = results["avg_etc_mm_day"] * period_days
+        water_balance_mm = total_precip_mm - total_etc_mm
+
+        irrigation_required = water_balance_mm < 0
+
+        recommended_mm = abs(water_balance_mm) if irrigation_required else 0.0
+        recommended_m3_per_ha = recommended_mm * 10  # 1 mm = 10 m³/ha
+        recommended_total_m3 = recommended_m3_per_ha * self.surface_ha
+
+        return {
+            "period_days": period_days,
+            "total_precip_mm": total_precip_mm,
+            "total_etc_mm": total_etc_mm,
+            "water_balance_mm": water_balance_mm,
+            "irrigation_required": irrigation_required,
+            "recommended_mm": recommended_mm,
+            "recommended_m3_per_ha": recommended_m3_per_ha,
+            "recommended_total_m3": recommended_total_m3,
+            "surface_ha": self.surface_ha,
+            "crop_name": self.crop_name,
+            "crop_stage": self.crop_stage
+        }
+
     
     def export_results_to_csv(
         self,

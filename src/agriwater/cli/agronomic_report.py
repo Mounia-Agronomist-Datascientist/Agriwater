@@ -1,5 +1,5 @@
 """
-This scrpt displays a synthetic and actionnable report.
+This script displays a synthetic and actionnable report.
 
 Author: Mounia Tonazzini
 Date: December 2025

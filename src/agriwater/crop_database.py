@@ -1,6 +1,6 @@
 """
 Crop database module for loading and managing crop parameters from JSON 
-configuration files and providing easy access to : 
+configuration files and providing easy access to: 
 - crop coefficients (Kc),
 - growth stages,
 - irrigation recommendations.

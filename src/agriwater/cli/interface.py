@@ -329,7 +329,8 @@ class AgriWaterCLI:
                 
                 self.console.print("\n[bold green]Irrigation Results[/bold green]")
                 for key, value in result.items():
-                    self.console.print(f"- {key.replace('_', ' ').title()}: {value:.2f}")
+                    display_value = f"{value:.2f}" if isinstance(value, (int, float)) else value
+                    self.console.print(f"- {key.replace('_', ' ').title()}: {display_value}")
                 
                 output_dir = input("Enter output directory [default: output]: ").strip() or "output"
                 self.console.print(f"\nCreating visualizations in '{output_dir}/'...")

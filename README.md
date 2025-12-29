@@ -186,8 +186,6 @@ Agriwater/
 │           └──interface.py           # Interactive interface to calculate irrigation needs
 │           └──agronomic_report.py.   # Synthetic report
 │
-├── notebooks/                        # Jupyter notebooks (optional)
-│   └── demo_agriwater.ipynb          # Interactive demo
 │
 ├── tests/                            # Tests of modules
 │   ├── test_crop_database.py         

@@ -161,7 +161,7 @@ calc.create_visualizations(output_dir="output")
 ### Project structure : 
 
 ```python
-agriwater/
+Agriwater/
 │
 ├── pyproject.toml                    # Configuration and dependancies
 ├── README.md                         # This file
@@ -171,24 +171,39 @@ agriwater/
 ├── src/                             
 │   └── agriwater/                   
 │       ├── __init__.py
-│       ├── main.py                   # CLI entry point
+│       ├── crop_database.py          # Manage crop parameters
+│       ├── main.py                   # Entry point
 │       ├── meteo_api.py              # Weather data retrieval
 │       ├── evapotranspiration.py     # ET0/ETc calculations
 │       ├── irrigation_calculator.py  # Main orchestration
 │       ├── visualizations.py         # Plot generation
 │       ├── utils.py                  # Utilities (conversions)
+│       ├── exceptions.py             # Custom exceptions
 │       └── data/                     # Data inside the package
-│           └── crops_parameters.json # Crop parameters (Kc, stages)
+│       |   └── crops_parameters.json # JSON crop info (Kc, stages)
+│       └── cli/                      # CLI folder
+│           └──__init__.py
+│           └──interface.py           # Interactive interface to calculate irrigation needs
+│           └──agronomic_report.py.   # Synthetic report
 │
 ├── notebooks/                        # Jupyter notebooks (optional)
 │   └── demo_agriwater.ipynb          # Interactive demo
 │
-├── tests/                            # Unit tests (optional)
-│   └── test_evapotranspiration.py
+├── tests/                            # Tests of modules
+│   ├── test_crop_database.py         
+│   ├── test_workflow.py              # Integration test for the full AgriWater workflow              
+│   ├── test_meteo_api.py             
+│   ├── test_evapotranspiration.py     
+│   ├── test_irrigation_calculator.py  
+│   ├── test_visualizations.py         
+│   ├── test_utils.py                  
+│   ├── test_exceptions.py  
+│   ├── test_interface.py 
+│   ├── test_agronomic_report.py            
 │
 ├── docs/                             # Documentation
 │   ├── methodology.md                # FAO-56 methodology explained
-│   └── guide_utilisation.md          # User guide (French)
+│   └── user_guide.md          # User guide
 │
 └── output/                           # Generated outputs (created at runtime)
     ├── *.png                         # Visualization plots

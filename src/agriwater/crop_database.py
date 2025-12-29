@@ -195,28 +195,18 @@ class CropDatabase:
 
     def get_crop_summary(self, crop_name: str) -> dict[str, Any]:
         """
-        Returns a structured summary of a crop's parameters.
+        Returns a human-readable summary string for display in the CLI.
         
         Args: crop_name (str): Name of the crop.
 
-        Raises: CropDataError: if the crop is missing
         """
-        crop_info = self.get_crop_info(crop_name)
-
-        return {
-            "full_name": crop_info["full_name"],
-            "scientific_name": crop_info["scientific_name"],
-            "type": crop_info["type"],
-            "description": crop_info["description"],
-            "total_cycle_days": crop_info["total_cycle_days"],
-            "water_stress_sensitivity": crop_info["water_stress_sensitivity"],
-            "phenological_stages": {
-                stage: {
-                    "kc": params["kc"],
-                    "duration_days": params["duration_days"]
-                }
-                for stage, params in crop_info["phenological_stages"].items()
-            },
-            "irrigation_interval": crop_info["irrigation_interval"]
-        }
-
+        info = self.get_crop_info(crop_name)
+        
+        summary = (
+            f"--- {info['full_name']} ({info['scientific_name']}) ---\n"
+            f"- Type: {info['type']}\n"
+            f"- Description: {info['description']}\n"
+            f"- Water stress sensitivity: {info['water_stress_sensitivity']}\n"
+            f"- Recommended Irrigation Every: {info['irrigation_interval'][0]}-{info['irrigation_interval'][1]} days\n"
+        )
+        return summary
